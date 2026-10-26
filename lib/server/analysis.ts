@@ -17,7 +17,7 @@ import { planAi, runAi } from '@/lib/server/ai';
 
 export const ANALYSIS_DIR = path.join(process.cwd(), '.cache', 'analyses');
 /** 解析の中身を変えたら上げる（古いキャッシュを使わないため） */
-const PIPELINE_VERSION = 1;
+const PIPELINE_VERSION = 2;
 
 type Saved = { meta: AnalysisMeta; landCover: LandCover; ai: Record<string, AiReport> };
 
@@ -79,11 +79,15 @@ export async function runAnalysis(bbox: BBox, emit: (ev: AnalysisEvent) => void,
     };
     emit({ type: 'meta', meta });
 
-    emit({ type: 'stage', stage: 'landcover', message: '土地被覆を判定' });
-    const lc = await analyzeLandCover(photo, meta.areaM2);
+    emit({ type: 'stage', stage: 'landcover', message: '土地被覆を判定', progress: 0 });
+    const lc = await analyzeLandCover(photo, meta.metersPerPixel, meta.areaM2, (done, total) =>
+      emit({ type: 'stage', stage: 'landcover', message: '土地被覆を判定', progress: done / total }),
+    );
+    if (lc.credit) meta = { ...meta, credit: `${meta.credit}。${lc.credit}` };
     if (signal.aborted) return;
     if (lc.overlayPng) await fs.writeFile(path.join(dir, 'overlay.png'), lc.overlayPng);
     landCover = { ...lc.landCover, overlayUrl: lc.overlayPng ? `/api/analyses/${id}/overlay.png` : null };
+    emit({ type: 'meta', meta });
     emit({ type: 'landcover', landCover });
     await fs.writeFile(path.join(dir, 'result.json'), JSON.stringify({ meta, landCover, ai: {} } satisfies Saved));
   }
