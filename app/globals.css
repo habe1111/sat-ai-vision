@@ -1,26 +1,163 @@
 @import "tailwindcss";
 
+/*
+ * 色は測量図の「紙」と「インク」から取り、写真の上で目を引くものだけを航空図の注記色
+ * （マゼンタ）にする。マゼンタは選択枠と、いま選ばれていることを示す箇所にだけ使う。
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f3f5f2;
+  --paper-2: #e7ebe6;
+  --ink: #14212b;
+  --ink-2: #4a5a66;
+  --rule: #c9d1cc;
+  --survey: #e0218a;
+  --survey-ink: #a30f61;
+  --danger: #b4231b;
+  --shadow: 0 1px 2px rgb(20 33 43 / 0.18), 0 8px 24px rgb(20 33 43 / 0.16);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-rule: var(--rule);
+  --color-survey: var(--survey);
+  --color-survey-ink: var(--survey-ink);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-ui), 'Hiragino Sans', 'Noto Sans JP', sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: #0d1418;   /* タイルが読み込まれるまでの下地。写真の暗部に近い色 */
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: 'palt' 1;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--survey);
+  outline-offset: 2px;
+}
+
+/* ---- MapLibre の標準コントロールを、紙とインクの体裁に揃える ---------------------- */
+.maplibregl-ctrl-group {
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+.maplibregl-ctrl-group:not(:empty) {
+  box-shadow: var(--shadow);
+}
+.maplibregl-ctrl-group button {
+  width: 40px;
+  height: 40px;
+}
+.maplibregl-ctrl-group button + button {
+  border-top-color: var(--rule);
+}
+.maplibregl-ctrl button:not(:disabled):hover {
+  background-color: var(--paper-2);
+}
+.maplibregl-ctrl-top-right {
+  top: max(env(safe-area-inset-top), 0px);
+  right: max(env(safe-area-inset-right), 0px);
+  transition: right 200ms ease;
+}
+.maplibregl-ctrl-top-right .maplibregl-ctrl {
+  margin: 12px 12px 0 0;
+}
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-scale {
+  background: rgb(243 245 242 / 0.85);
+  border-color: var(--ink);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.maplibregl-ctrl-attrib {
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  background: rgb(243 245 242 / 0.9);
+}
+
+/* 解析結果のパネルを右に出している間（PC）は、地図の操作ボタンをパネルの外へ逃がす */
+@media (min-width: 1024px) {
+  .has-report .maplibregl-ctrl-top-right {
+    right: 440px;
+  }
+  .has-report .maplibregl-ctrl-bottom-right {
+    right: 428px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---- 選択枠：四隅のトンボと、解析中の走査線 ---------------------------------- */
+.frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  border: 1.5px solid var(--survey);
+  background: rgb(224 33 138 / 0.07);
+}
+.frame .tick {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--survey);
+  border-style: solid;
+  border-width: 0;
+}
+.frame .tick.nw { left: -8px; top: -8px; border-left-width: 3px; border-top-width: 3px; }
+.frame .tick.ne { right: -8px; top: -8px; border-right-width: 3px; border-top-width: 3px; }
+.frame .tick.sw { left: -8px; bottom: -8px; border-left-width: 3px; border-bottom-width: 3px; }
+.frame .tick.se { right: -8px; bottom: -8px; border-right-width: 3px; border-bottom-width: 3px; }
+
+.frame .scan {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.frame .scan::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 28%;
+  top: -28%;
+  background: linear-gradient(to bottom, rgb(224 33 138 / 0), rgb(224 33 138 / 0.28) 85%, var(--survey));
+  animation: scan 1.8s linear infinite;
+}
+@keyframes scan {
+  to { top: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .frame .scan::after {
+    animation: none;
+    top: auto;
+    bottom: 0;
+    height: 3px;
+    background: var(--survey);
+  }
+}
+
+.label-tag {
+  background: var(--survey);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
