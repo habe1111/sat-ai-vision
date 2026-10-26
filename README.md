@@ -114,7 +114,7 @@ Gemma 4 は考えさせる（thinking）と 1 枚に 20 秒〜十数分かかり
 
 ## 動かし方
 
-必要なもの：Node.js 20.9 以上、macOS または Linux。AI の所見を出すには [Ollama](https://ollama.com/)（または Anthropic の API キー）。
+必要なもの：Node.js 20.12 以上、macOS または Linux。AI の所見を出すには [Ollama](https://ollama.com/)（または Anthropic の API キー）。
 
 ```bash
 git clone https://github.com/habe1111/sat-ai-vision.git
@@ -154,10 +154,12 @@ npm run lint && npm run typecheck
 npm run dev &                                  # 別のターミナルでも可
 BASE_URL=http://localhost:3000 npm run e2e     # PC の画面
 BASE_URL=http://localhost:3000 VIEWPORT=mobile npm run e2e   # スマホの画面（指でなぞって範囲を選ぶ）
+BASE_URL=http://localhost:3000 VIEWPORT=landscape npm run e2e  # スマホの横向き
 ```
 
 E2E は headless Chrome で「地図が出る → 検索して結果を選ぶと URL が移動先を指す → 範囲を選ぶ → 土地被覆と AI の所見が出る」までを確かめ、
 各段のスクリーンショットを `e2e-out/` に残します。Chrome の場所は `CHROME_PATH` で変えられます。
+AI が使えないときは「所見を出せない理由」が出れば通ります。`REQUIRE_AI=1` を付けると、所見が出なければ失敗にします。
 
 ## 制約
 

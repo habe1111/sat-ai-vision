@@ -22,7 +22,8 @@ npm run dev                 # http://localhost:3000
 npm run setup               # 土地被覆モデルの取得と Ollama の確認
 npm run lint && npm run typecheck
 BASE_URL=http://localhost:3000 npm run e2e                  # PC
-BASE_URL=http://localhost:3000 VIEWPORT=mobile npm run e2e  # スマホ（指でなぞる）
+BASE_URL=http://localhost:3000 VIEWPORT=mobile npm run e2e  # スマホ（指でなぞる）。横向きは VIEWPORT=landscape
+REQUIRE_AI=1 BASE_URL=http://localhost:3000 npm run e2e      # AI の所見まで必須にする
 ollama serve                # AI の判読（Ollama）に必要
 ```
 

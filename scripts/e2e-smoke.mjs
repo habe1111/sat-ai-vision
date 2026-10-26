@@ -3,6 +3,7 @@
  *
  *   npm run dev            # 別のターミナルで起動しておく
  *   npm run e2e            # BASE_URL・CHROME_PATH・OUT_DIR で上書きできる
+ *   VIEWPORT=mobile / landscape でスマホの縦・横。REQUIRE_AI=1 で AI の所見が出なければ失敗にする
  *
  * 確かめること：地図が出る → 検索して結果を選ぶと URL が移動先を指す → 範囲をドラッグで選ぶ →
  * 解析の結果（写真・土地被覆、AI が使えれば所見）が出る。各段のスクショを OUT_DIR に残す。
@@ -14,9 +15,12 @@ import puppeteer from 'puppeteer-core';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const CHROME_PATH = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const OUT_DIR = process.env.OUT_DIR || 'e2e-out';
-const VIEWPORT = process.env.VIEWPORT === 'mobile'
-  ? { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
-  : { width: 1440, height: 900, deviceScaleFactor: 1 };
+const VIEWPORTS = {
+  desktop: { width: 1440, height: 900, deviceScaleFactor: 1 },
+  mobile: { width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+  landscape: { width: 844, height: 390, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+};
+const VIEWPORT = VIEWPORTS[process.env.VIEWPORT || 'desktop'];
 const WAIT_AI = process.env.WAIT_AI !== '0';
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -61,8 +65,10 @@ try {
   await btn.click();
   const { width, height } = VIEWPORT;
   // スマホは画面が狭いので、一辺 60 m 以上になるよう幅いっぱいに近くなぞる
-  const [fx0, fx1] = VIEWPORT.isMobile ? [0.12, 0.88] : [0.38, 0.62];
-  const x0 = width * fx0, y0 = height * 0.3, x1 = width * fx1, y1 = height * 0.6;
+  const [fx0, fx1] = VIEWPORT.width < 600 ? [0.12, 0.88] : [0.38, 0.62];
+  // 横向きのスマホは背が低いので、縦も広くなぞる
+  const [fy0, fy1] = height < 600 ? [0.15, 0.7] : [0.3, 0.6];
+  const x0 = width * fx0, y0 = height * fy0, x1 = width * fx1, y1 = height * fy1;
   if (VIEWPORT.hasTouch) {
     // スマホは指でなぞる（タッチの Pointer Events で選べることを確かめる）
     await page.touchscreen.touchStart(x0, y0);
@@ -95,8 +101,18 @@ try {
 
   if (WAIT_AI) {
     await page.waitForSelector('xpath/.//h3[contains(., "AI の所見")]', { timeout: 300000 });
-    ok('AI の所見が出た（または出せない理由が表示された）');
+    const none = await page.$('xpath/.//h3[contains(., "AI の所見はありません")]');
+    if (!none) ok('AI の所見が出た');
+    else if (process.env.REQUIRE_AI === '1') fail('AI の所見が出なかった');
+    else ok('AI の所見を出せない理由が表示された');
     await shot(page, '6-report');
+    // 所見はパネルの下の方にあるので、見出しまでスクロールしてもう 1 枚
+    await page.evaluate(() => {
+      const h = [...document.querySelectorAll('aside h3')].find((e) => e.textContent.startsWith('AI の所見'));
+      h?.scrollIntoView({ block: 'start' });
+    });
+    await new Promise((r) => setTimeout(r, 300));
+    await shot(page, '7-ai');
   }
   if (errors.length) fail(`ブラウザのエラー:\n  ${errors.join('\n  ')}`);
 } catch (e) {
