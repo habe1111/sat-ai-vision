@@ -16,7 +16,7 @@ const MODEL_URL = process.env.FLAIR_MODEL_URL
   || 'https://github.com/habe1111/sat-ai-vision/releases/download/models-v1/flair_rgb15.onnx';
 const MODEL_SHA256 = '6deb785d299b5d060fdd85399cc5e52c150695683b9e221dc08983879ec2f7f0';
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3-vl:8b';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:e4b-it-q4_K_M';
 
 const sha256 = (file) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 

@@ -5,7 +5,9 @@ import { Ollama } from 'ollama';
 import { REPORT_SCHEMA, type RawReport, normalizeReport } from './schema';
 
 export const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
-export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3-vl:8b';
+// 6 地点で判読の質と速さを比べて決めた（README の「AI の判読」）。
+// gemma4:e4b は Mac だと MLX で動き、構造化出力（format）が使えないので量子化版（llama.cpp）を指名する。
+export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:e4b-it-q4_K_M';
 
 /** Ollama が起動していて、指定のモデルが入っているか */
 export async function ollamaStatus(): Promise<{ ok: true } | { ok: false; reason: string }> {
@@ -31,6 +33,8 @@ export async function ollamaReport(system: string, user: string, jpeg: Buffer, s
       model: OLLAMA_MODEL,
       stream: false,
       format: REPORT_SCHEMA as unknown as object,
+      // 考えさせると 1 枚に数十秒〜十数分と読めず、採用した版は考えさせなくても質が同程度だった
+      think: false,
       options: { temperature: 0.2, num_ctx: 16384 },
       messages: [
         { role: 'system', content: system },

@@ -88,7 +88,29 @@ IGN（フランス国土地理院）の [FLAIR-INC](https://huggingface.co/IGNF/
 
 ### AI の判読
 
-<!-- AI_SECTION -->
+写真と、土地被覆の数値・写真の条件（中心の緯度経度、範囲、北が上）を VLM（画像を読める言語モデル）に渡し、
+「全体の要約・地物ごとの所見（写真の中の位置と確度つき）・判断できないこと」を JSON で返させます。
+VLM は面積比や個数の推定が苦手なので、割合は土地被覆の数値を正とし、VLM には何が写っているかの言語化だけを任せています。
+
+既定は手元の [Ollama](https://ollama.com/) で動く **Gemma 4 E4B**（`gemma4:e4b-it-q4_K_M`）です。写真は外へ出ず、費用も掛かりません。
+`ANTHROPIC_API_KEY` を設定すると Claude で判読します（所見は詳しくなりますが、写真が Anthropic に送られ、利用料が掛かります）。
+
+モデルは、土地被覆と同じ 6 地点で、手元で動く 3 つを比べて決めました（Apple M シリーズ、写真の長辺 1,536 px）。
+判読結果はどのモデルのものかを伏せて、画像と見比べて「正確さ・捏造」「位置（左上・中央など）」「日本語と数値の扱い」を 5 段階で採点しています。
+
+| モデル | 1 枚の時間 | 正確さ | 位置 | 日本語 | 結果 |
+|---|---|---|---|---|---|
+| **Gemma 4 E4B（Q4_K_M、思考なし）** | **13〜46 秒** | **3.5** | **4.2** | **3.0** | **採用。所見が具体的で、捏造が最も少ない** |
+| Gemma 4 E4B（nvfp4、思考なし） | 15〜20 秒 | 2.8 | 3.7 | 2.7 | Mac では MLX で動き、構造化出力（JSON の型の指定）が使えない |
+| Qwen3-VL 8B Instruct | 32〜62 秒 | 3.0 | 4.2 | 2.0 | 写真に無い施設名を作る、です・ます調にならない |
+| Qwen3-VL 8B（思考あり） | 236〜316 秒 | − | − | − | 遅すぎるため対象外 |
+
+Gemma 4 は考えさせる（thinking）と 1 枚に 20 秒〜十数分かかり、時間が読めません。
+採用した版は考えさせなくても、考えさせた nvfp4 版と同じ程度の点（平均 3.6）だったため、考えさせずに使います。
+土地被覆の数値を渡さない場合とも比べました。数値の繰り返しが無くなるぶん日本語の点は上がります（3.0 → 3.5）が、
+1 地点あたりの誤りが増えた（1.8 → 3.0 件）ため、数値は渡しています。
+
+どのモデルでも、見落としや、似た地物の取り違え（収穫後の水田を畑と読むなど）は残ります。所見は目安としてお読みください。
 
 ## 動かし方
 
@@ -104,7 +126,14 @@ npm run dev          # http://localhost:3000
 
 AI の所見を手元で出すには、Ollama を入れて起動し、モデルを取得します。
 
-<!-- OLLAMA_STEPS -->
+```bash
+brew install ollama                 # Mac。Linux は https://ollama.com/download の手順で
+ollama serve                        # 起動（別のターミナルで開いたままにする）
+ollama pull gemma4:e4b-it-q4_K_M    # 判読に使うモデル（約 6.6 GB）
+npm run setup                       # Ollama とモデルが見えるかを確認
+```
+
+初回の判読はモデルの読み込みに 10 秒ほど余計に掛かります。メモリは 8 GB 以上の空きがあると安定します。
 
 ### 設定（任意）
 
@@ -114,7 +143,7 @@ AI の所見を手元で出すには、Ollama を入れて起動し、モデル�
 |---|---|---|
 | `AI_PROVIDER` | `auto` | `auto`（キーがあれば Claude、無ければ Ollama）/ `ollama` / `anthropic` / `none` |
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama の場所 |
-| `OLLAMA_MODEL` | <!-- OLLAMA_MODEL --> | 判読に使うモデル |
+| `OLLAMA_MODEL` | `gemma4:e4b-it-q4_K_M` | 判読に使うモデル。構造化出力（`format`）に対応したものを選ぶ |
 | `ANTHROPIC_API_KEY` | （なし） | 設定すると Claude で判読します。写真が Anthropic に送られ、利用料が掛かります |
 | `ANTHROPIC_MODEL` | `claude-opus-5-5` | Claude のモデル |
 
@@ -142,7 +171,7 @@ E2E は headless Chrome で「地図が出る → 検索して結果を選ぶと
 - 空中写真：[国土地理院](https://maps.gsi.go.jp/development/ichiran.html)「全国最新写真（シームレス）」ほか（地理院タイル）。解析結果の画像はこれを加工して作成しています。
 - 検索：© [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors（[Nominatim](https://nominatim.org/)。[利用ポリシー](https://operations.osmfoundation.org/policies/nominatim/)に従い、毎秒 1 件まで・確定時のみ検索）
 - 土地被覆モデル：IGN [FLAIR-INC](https://huggingface.co/IGNF/FLAIR-INC_rgb_15cl_resnet34-unet)（2024-08-09 更新、[Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/)）を ONNX に変換して使用。変換手順は [tools/flair-export](tools/flair-export/)
-<!-- MODEL_LICENSES -->
+- 判読モデル（既定）：Google [Gemma 4](https://ollama.com/library/gemma4) E4B（[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)）。このリポジトリには含めず、各自が Ollama で取得します
 - このリポジトリのコード：[MIT License](LICENSE)
 
 ## メンテナンス

@@ -40,7 +40,7 @@ export type Finding = {
 };
 
 export type AiReport = {
-  engine: string;     // 表示用（例「Ollama qwen3-vl:8b」）
+  engine: string;     // 表示用（例「Ollama gemma4:e4b-it-q4_K_M」）
   summary: string;
   findings: Finding[];
   caveats: string[];
