@@ -11,12 +11,19 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// .env.local があれば読む（Node の --env-file-if-exists は 20.19 / 22.9 より前に無いので自前で）。
+// 既に環境変数にある値は上書きしない
+if (fs.existsSync('.env.local')) process.loadEnvFile('.env.local');
+
 const MODEL = path.join(process.cwd(), 'models', 'flair_rgb15.onnx');
 const MODEL_URL = process.env.FLAIR_MODEL_URL
   || 'https://github.com/habe1111/sat-ai-vision/releases/download/models-v1/flair_rgb15.onnx';
 const MODEL_SHA256 = '6deb785d299b5d060fdd85399cc5e52c150695683b9e221dc08983879ec2f7f0';
 const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:e4b-it-q4_K_M';
+
+/** タグを省いた名前は Ollama では「:latest」として入る。比べる前にそろえる */
+const withTag = (name) => (name.split('/').pop().includes(':') ? name : `${name}:latest`);
 
 const sha256 = (file) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
@@ -47,11 +54,23 @@ async function setupModel() {
 }
 
 async function checkOllama() {
-  if ((process.env.AI_PROVIDER || 'auto') === 'anthropic') return;
+  // アプリ（lib/server/ai/index.ts の planAi）と同じ条件で、Ollama を使わないときは確かめない
+  const pref = (process.env.AI_PROVIDER || 'auto').toLowerCase();
+  if (pref === 'none') {
+    console.log('- AI の判読は設定で止めています（AI_PROVIDER=none）。Ollama は確かめません');
+    return;
+  }
+  if (pref === 'anthropic' || (pref === 'auto' && process.env.ANTHROPIC_API_KEY)) {
+    console.log(process.env.ANTHROPIC_API_KEY
+      ? '✓ AI の判読は Claude（Anthropic API）を使います。Ollama は確かめません'
+      : '! AI_PROVIDER=anthropic ですが ANTHROPIC_API_KEY がありません。.env.local に追加してください');
+    return;
+  }
   try {
     const res = await fetch(`${OLLAMA_HOST}/api/tags`);
     const { models } = await res.json();
-    if (models.some((m) => m.name === OLLAMA_MODEL || m.model === OLLAMA_MODEL)) {
+    const want = withTag(OLLAMA_MODEL);
+    if (models.some((m) => withTag(m.name) === want || withTag(m.model ?? m.name) === want)) {
       console.log(`✓ Ollama に ${OLLAMA_MODEL} が入っています`);
     } else {
       console.log(`! Ollama は動いていますが ${OLLAMA_MODEL} がありません。次を実行してください：\n    ollama pull ${OLLAMA_MODEL}`);

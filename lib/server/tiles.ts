@@ -5,6 +5,7 @@
  * 対象になる（地理院地図利用規約）。そこで同時接続を絞り、取ったタイルは手元にキャッシュして
  * 同じ範囲を何度も取りに行かない。
  */
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -28,7 +29,23 @@ export type Stitched = {
 /** 利用者の選び方に原因がある失敗（画面にそのまま出す） */
 export class SelectionError extends Error {}
 
-async function fetchTile(z: number, x: number, y: number): Promise<Buffer | null> {
+/** 1 回の取得の待ち時間の上限。地理院が応答しないとき、既定（300 秒）まで待たないため */
+const FETCH_TIMEOUT_MS = 15_000;
+
+/** 一時ファイルに書いてから置き換える。途中で止まっても、書きかけのタイルを読まないため */
+async function writeAtomic(file: string, data: Buffer | string) {
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const tmp = `${file}.${process.pid}.${randomUUID()}.tmp`;
+  try {
+    await fs.writeFile(tmp, data);
+    await fs.rename(tmp, file);
+  } catch (e) {
+    await fs.rm(tmp, { force: true });
+    throw e;
+  }
+}
+
+async function fetchTile(z: number, x: number, y: number, signal: AbortSignal): Promise<Buffer | null> {
   const file = path.join(CACHE_DIR, String(z), String(x), `${y}.jpg`);
   try {
     return await fs.readFile(file);
@@ -43,30 +60,44 @@ async function fetchTile(z: number, x: number, y: number): Promise<Buffer | null
     // 未確認
   }
   for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await fetch(tileUrl(z, x, y), { headers: { 'User-Agent': USER_AGENT } });
-    if (res.status === 404) {
-      await fs.mkdir(path.dirname(file), { recursive: true });
-      await fs.writeFile(missing, '');
-      return null;
-    }
-    if (res.ok) {
-      const buf = Buffer.from(await res.arrayBuffer());
-      await fs.mkdir(path.dirname(file), { recursive: true });
-      await fs.writeFile(file, buf);
-      return buf;
+    signal.throwIfAborted();
+    try {
+      const res = await fetch(tileUrl(z, x, y), {
+        headers: { 'User-Agent': USER_AGENT },
+        signal: AbortSignal.any([signal, AbortSignal.timeout(FETCH_TIMEOUT_MS)]),
+      });
+      if (res.status === 404) {
+        await writeAtomic(missing, '');
+        return null;
+      }
+      if (res.ok) {
+        const buf = Buffer.from(await res.arrayBuffer());
+        await writeAtomic(file, buf);
+        return buf;
+      }
+    } catch (e) {
+      // 画面側の中止はそのまま止める。通信の失敗（切断・DNS・時間切れ）は取り直す
+      if (signal.aborted) throw e;
+      console.warn(`[tiles] z${z}/${x}/${y} の取得に失敗しました（${attempt + 1} 回目）`, e);
     }
     await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
   }
   throw new Error(`空中写真のタイルを取得できませんでした（z${z}/${x}/${y}）。時間をおいて再度お試しください。`);
 }
 
-/** 並列数を絞って順に処理する */
-async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+/** 並列数を絞って順に処理する。中止されたら残りは取りに行かない */
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  signal: AbortSignal,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
   const out: R[] = new Array(items.length);
   let next = 0;
   await Promise.all(
     Array.from({ length: Math.min(limit, items.length) }, async () => {
       while (next < items.length) {
+        signal.throwIfAborted();
         const i = next++;
         out[i] = await fn(items[i]);
       }
@@ -78,10 +109,12 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 /**
  * 範囲を覆うタイルを取り、範囲ぴったりに切り抜いた 1 枚の JPEG を返す。
  * onProgress は取得済みのタイル数を知らせる（画面の進み具合に使う）。
+ * signal が中止されると、取得中のタイルを打ち切って AbortError を投げる。
  */
 export async function stitchBBox(
   bbox: BBox,
   zoom: number,
+  signal: AbortSignal,
   onProgress?: (done: number, total: number) => void,
 ): Promise<Stitched> {
   const [w, s, e, n] = bbox;
@@ -97,8 +130,8 @@ export async function stitchBBox(
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) coords.push([x, y]);
 
   let done = 0;
-  const bufs = await mapLimit(coords, CONCURRENCY, async ([x, y]) => {
-    const buf = await fetchTile(zoom, x, y);
+  const bufs = await mapLimit(coords, CONCURRENCY, signal, async ([x, y]) => {
+    const buf = await fetchTile(zoom, x, y, signal);
     onProgress?.(++done, coords.length);
     return buf;
   });

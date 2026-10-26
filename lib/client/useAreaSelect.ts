@@ -11,6 +11,9 @@ import { useEffect } from 'react';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { type BBox, bboxFromPoints } from '@/lib/geo';
 
+/** これより短い動き（タップ中の指のぶれ・クリック中のマウスのずれ）は、ドラッグとみなさない */
+const MIN_DRAG_PX = 8;
+
 export function useAreaSelect(
   map: MapLibreMap | null,
   active: boolean,
@@ -27,6 +30,7 @@ export function useAreaSelect(
     el.style.touchAction = 'none';
 
     let start: [number, number] | null = null;
+    let startPx: [number, number] | null = null;
     let pointerId: number | null = null;
     let last: BBox | null = null;
 
@@ -40,11 +44,13 @@ export function useAreaSelect(
       pointerId = e.pointerId;
       el.setPointerCapture(e.pointerId);
       start = lngLatAt(e);
+      startPx = [e.clientX, e.clientY];
       last = null;
       e.preventDefault();
     };
     const move = (e: PointerEvent) => {
-      if (e.pointerId !== pointerId || !start) return;
+      if (e.pointerId !== pointerId || !start || !startPx) return;
+      if (!last && Math.hypot(e.clientX - startPx[0], e.clientY - startPx[1]) < MIN_DRAG_PX) return;
       last = bboxFromPoints(start, lngLatAt(e));
       onChange(last);
     };
@@ -52,17 +58,27 @@ export function useAreaSelect(
       if (e.pointerId !== pointerId) return;
       pointerId = null;
       start = null;
+      startPx = null;
       onDone(last);
+    };
+    // OS がジェスチャーを横取りしたとき（iOS の端からのスワイプなど）は、途中の範囲を確定させずに捨てる
+    const cancel = (e: PointerEvent) => {
+      if (e.pointerId !== pointerId) return;
+      pointerId = null;
+      start = null;
+      startPx = null;
+      last = null;
+      onDone(null);
     };
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
-    el.addEventListener('pointercancel', up);
+    el.addEventListener('pointercancel', cancel);
     return () => {
       el.removeEventListener('pointerdown', down);
       el.removeEventListener('pointermove', move);
       el.removeEventListener('pointerup', up);
-      el.removeEventListener('pointercancel', up);
+      el.removeEventListener('pointercancel', cancel);
       handlers.forEach((h, i) => wasEnabled[i] && h.enable());
       el.style.cursor = '';
       el.style.touchAction = '';

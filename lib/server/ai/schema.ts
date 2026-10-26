@@ -38,21 +38,23 @@ export type RawReport = { summary: string; findings: Finding[]; caveats: string[
 /** モデルの出力を検めて、画面に出せる形に整える。形が崩れていれば例外にする */
 export function normalizeReport(v: unknown): RawReport {
   const o = v as Partial<RawReport> | null;
-  if (!o || typeof o.summary !== 'string' || !Array.isArray(o.findings)) {
+  if (!o || typeof o.summary !== 'string' || !o.summary.trim() || !Array.isArray(o.findings)) {
     throw new Error('AI の出力を読み取れませんでした。');
   }
+  // 型の違う値（オブジェクトなど）は「[object Object]」と出さないよう捨てる
+  const str = (s: unknown) => (typeof s === 'string' ? s.trim() : '');
   const conf = (c: unknown): Finding['confidence'] => (c === '高' || c === '中' || c === '低' ? c : '低');
   return {
     summary: o.summary.trim(),
     findings: o.findings
-      .filter((f) => f && typeof f.name === 'string' && f.name.trim())
+      .filter((f) => f && str(f.name))
       .slice(0, 8)
       .map((f) => ({
-        name: String(f.name).trim(),
-        where: String(f.where ?? '').trim(),
-        detail: String(f.detail ?? '').trim(),
+        name: str(f.name),
+        where: str(f.where),
+        detail: str(f.detail),
         confidence: conf(f.confidence),
       })),
-    caveats: (Array.isArray(o.caveats) ? o.caveats : []).map(String).map((s) => s.trim()).filter(Boolean).slice(0, 6),
+    caveats: (Array.isArray(o.caveats) ? o.caveats : []).map(str).filter(Boolean).slice(0, 6),
   };
 }

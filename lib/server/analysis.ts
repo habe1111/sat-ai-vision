@@ -3,6 +3,7 @@
  * 段ごとに結果を emit し、画面は届いた順に表示する。
  *
  * 結果は .cache/analyses/<id>/ に残し、同じ範囲・同じ AI なら取り直さずに返す。
+ * ただし色の簡易推定で残した土地被覆は、いま FLAIR が使えるなら土地被覆だけ作り直す。
  */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
@@ -12,12 +13,12 @@ import { ANALYSIS_CREDIT } from '@/lib/imagery';
 import { chooseZoom } from '@/lib/selection';
 import type { AiReport, AnalysisEvent, AnalysisMeta, LandCover } from '@/lib/types';
 import { SelectionError, stitchBBox } from '@/lib/server/tiles';
-import { analyzeLandCover } from '@/lib/server/landcover';
+import { analyzeLandCover, flairAvailable } from '@/lib/server/landcover';
 import { planAi, runAi } from '@/lib/server/ai';
 
 export const ANALYSIS_DIR = path.join(process.cwd(), '.cache', 'analyses');
 /** 解析の中身を変えたら上げる（古いキャッシュを使わないため） */
-const PIPELINE_VERSION = 2;
+const PIPELINE_VERSION = 3;
 
 type Saved = { meta: AnalysisMeta; landCover: LandCover; ai: Record<string, AiReport> };
 
@@ -43,19 +44,21 @@ export async function runAnalysis(bbox: BBox, emit: (ev: AnalysisEvent) => void,
   const aiPlan = await planAi();
   const saved = await readSaved(dir);
 
-  // 写真と土地被覆は範囲だけで決まるので、前に解析していれば使い回す
+  // 写真と土地被覆は範囲だけで決まるので、前に解析していれば使い回す。
+  // ただしモデルが無い・失敗したときの簡易推定は、FLAIR が使えるようになっていれば作り直す
+  const redoLandCover = saved?.landCover.method === 'color-index' && flairAvailable();
+  // 作り直しても FLAIR がまた失敗して簡易推定になったときは、前の結果（AI の所見も）をそのまま使う
+  let reused = Boolean(saved) && !redoLandCover;
   let meta: AnalysisMeta;
   let landCover: LandCover;
   let photo: Buffer;
   if (saved) {
     meta = saved.meta;
-    landCover = saved.landCover;
     photo = await fs.readFile(path.join(dir, 'photo.jpg'));
     emit({ type: 'meta', meta });
-    emit({ type: 'landcover', landCover });
   } else {
     emit({ type: 'stage', stage: 'imagery', message: '空中写真を取得', progress: 0 });
-    const st = await stitchBBox(bbox, choice.zoom, (done, total) =>
+    const st = await stitchBBox(bbox, choice.zoom, signal, (done, total) =>
       emit({ type: 'stage', stage: 'imagery', message: `空中写真を取得（${done}/${total} タイル）`, progress: done / total }),
     );
     if (signal.aborted) return;
@@ -78,26 +81,35 @@ export async function runAnalysis(bbox: BBox, emit: (ev: AnalysisEvent) => void,
       credit: ANALYSIS_CREDIT,
     };
     emit({ type: 'meta', meta });
+  }
 
+  if (saved && !redoLandCover) {
+    landCover = saved.landCover;
+    emit({ type: 'landcover', landCover });
+  } else {
     emit({ type: 'stage', stage: 'landcover', message: '土地被覆を判定', progress: 0 });
-    const lc = await analyzeLandCover(photo, meta.metersPerPixel, meta.areaM2, (done, total) =>
+    const lc = await analyzeLandCover(photo, meta.metersPerPixel, meta.areaM2, signal, (done, total) =>
       emit({ type: 'stage', stage: 'landcover', message: '土地被覆を判定', progress: done / total }),
     );
-    if (lc.credit) meta = { ...meta, credit: `${meta.credit}。${lc.credit}` };
     if (signal.aborted) return;
-    if (lc.overlayPng) await fs.writeFile(path.join(dir, 'overlay.png'), lc.overlayPng);
-    landCover = { ...lc.landCover, overlayUrl: lc.overlayPng ? `/api/analyses/${id}/overlay.png` : null };
+    if (redoLandCover && lc.landCover.method === 'color-index') reused = true;
+    meta = { ...meta, credit: lc.credit ? `${ANALYSIS_CREDIT}。${lc.credit}` : ANALYSIS_CREDIT };
+    // 方式ごとにファイル名を変える（重ね絵は immutable で返すので、同じ URL だと古い絵が残る）
+    const overlayFile = `overlay-${lc.landCover.method}.png`;
+    if (lc.overlayPng) await fs.writeFile(path.join(dir, overlayFile), lc.overlayPng);
+    landCover = { ...lc.landCover, overlayUrl: lc.overlayPng ? `/api/analyses/${id}/${overlayFile}` : null };
     emit({ type: 'meta', meta });
     emit({ type: 'landcover', landCover });
-    await fs.writeFile(path.join(dir, 'result.json'), JSON.stringify({ meta, landCover, ai: {} } satisfies Saved));
+    // 土地被覆を作り直したときは、古い数値をもとにした AI の所見も捨てる
+    await fs.writeFile(path.join(dir, 'result.json'), JSON.stringify({ meta, landCover, ai: reused ? saved!.ai : {} } satisfies Saved));
   }
 
   if (!aiPlan.provider) {
     emit({ type: 'ai-unavailable', message: aiPlan.reason });
-    emit({ type: 'done', cached: Boolean(saved) });
+    emit({ type: 'done', cached: reused });
     return;
   }
-  const cachedAi = saved?.ai[aiPlan.label];
+  const cachedAi = reused ? saved?.ai[aiPlan.label] : undefined;
   if (cachedAi) {
     emit({ type: 'ai', ai: cachedAi });
     emit({ type: 'done', cached: true });
@@ -120,12 +132,18 @@ export async function runAnalysis(bbox: BBox, emit: (ev: AnalysisEvent) => void,
   } catch (e) {
     if (signal.aborted) return;
     emit({ type: 'ai-unavailable', message: `AI の判読に失敗しました（${e instanceof Error ? e.message : String(e)}）。` });
-    emit({ type: 'done', cached: Boolean(saved) });
+    emit({ type: 'done', cached: reused });
+    return;
+  }
+  // 中身の無い所見は残さない（残すと同じ範囲では二度と判読し直さない）
+  if (!ai.summary.trim() && ai.findings.length === 0) {
+    emit({ type: 'ai', ai });
+    emit({ type: 'done', cached: reused });
     return;
   }
   const latest = (await readSaved(dir)) ?? { meta, landCover, ai: {} };
   latest.ai[aiPlan.label] = ai;
   await fs.writeFile(path.join(dir, 'result.json'), JSON.stringify(latest));
   emit({ type: 'ai', ai });
-  emit({ type: 'done', cached: Boolean(saved) });
+  emit({ type: 'done', cached: reused });
 }

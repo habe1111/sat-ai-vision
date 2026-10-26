@@ -23,6 +23,8 @@ export async function POST(request: Request) {
       try {
         await runAnalysis(bbox, emit, request.signal);
       } catch (e) {
+        // 画面側が中止した（範囲の選び直し・閉じる）ときは失敗として扱わない
+        if (request.signal.aborted) return;
         const message = e instanceof SelectionError
           ? e.message
           : `解析に失敗しました（${e instanceof Error ? e.message : String(e)}）。`;

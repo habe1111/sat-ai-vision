@@ -3,8 +3,8 @@
  * 解析結果のパネル（判読調書）。PC では右側、スマホでは下から出す。
  * 結果は届いた順に埋まっていく（写真 → 土地被覆 → AI の所見）。
  */
-import { useEffect, useState } from 'react';
-import type { AnalysisState, StageKey } from '@/lib/client/useAnalysis';
+import { useEffect, useRef, useState } from 'react';
+import type { AnalysisState, StageKey, StageState } from '@/lib/client/useAnalysis';
 import { bboxCenter, bboxSizeMeters, formatArea, formatDms, formatLength } from '@/lib/geo';
 import { IconAlert, IconCheck, IconClose } from '@/components/icons';
 
@@ -14,9 +14,41 @@ type Props = {
   onOverlayChange: (on: boolean) => void;
   onClose: () => void;
   onRetry: () => void;
+  /** 狭い画面で検索パネルを開いている間は、重ならないように隠す（中身はそのまま残す） */
+  concealOnMobile: boolean;
 };
 
 const STAGE_ORDER: StageKey[] = ['imagery', 'landcover', 'ai'];
+
+/** スクリーンリーダーに伝える、段の切り替わり */
+const STAGE_RUNNING: Record<StageKey, string> = {
+  imagery: '空中写真を取得しています',
+  landcover: '土地被覆を判定しています',
+  ai: 'AI が写真を判読しています',
+};
+const STATUS_TEXT: Partial<Record<StageState['status'], string>> = {
+  running: '（実行中）',
+  done: '（完了）',
+  failed: '（失敗）',
+  skipped: '（行えず）',
+};
+
+/**
+ * 読み上げる短い文。毎秒変わる経過秒数や % は入れない（そのたびに読み上げが積まれるため）。
+ * エラーは role="alert" の側で知らせるので、ここでは空にする
+ */
+function announcement(state: AnalysisState): string {
+  if (state.status === 'done') {
+    if (state.ai) return '解析が終わりました。AI の所見を表示しています。';
+    if (state.aiUnavailable) return '解析が終わりました。AI の所見はありません。';
+    return '解析が終わりました。';
+  }
+  if (state.status !== 'running') return '';
+  const k = STAGE_ORDER.find((key) => state.stages[key].status === 'running');
+  if (!k) return '';
+  if (k === 'ai' && state.landCover) return `土地被覆の構成を表示しました。${STAGE_RUNNING.ai}`;
+  return STAGE_RUNNING[k];
+}
 
 /**
  * 動いている段の経過秒数。手元の VLM は 1 枚に数十秒かかるので、止まっていないことを示す
@@ -27,25 +59,37 @@ function Elapsed({ since }: { since: number }) {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
-  return <span className="num ml-auto shrink-0 text-xs text-ink-2">{Math.max(0, Math.floor((now - since) / 1000))} 秒</span>;
+  return <span aria-hidden className="num ml-auto shrink-0 text-xs text-ink-2">{Math.max(0, Math.floor((now - since) / 1000))} 秒</span>;
 }
 
-export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetry }: Props) {
+export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetry, concealOnMobile }: Props) {
   const { meta, landCover, ai, bbox } = state;
   const running = state.status === 'running';
   const size = bbox ? bboxSizeMeters(bbox) : null;
   const center = bbox ? bboxCenter(bbox) : null;
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // 開いたら見出しへフォーカスを移す。押した「この範囲を解析」は消えるので、body に落とさない
+  useEffect(() => {
+    headingRef.current?.focus({ preventScroll: true });
+  }, []);
 
   return (
+    <>
+    {/* 読み上げ用。スマホで検索中はパネルごと隠すので、その外に置いて隠れないようにする */}
+    <p role="status" className="sr-only">{announcement(state)}</p>
     <aside
       aria-label="判読結果"
-      className="fixed inset-x-0 bottom-0 z-20 flex max-h-[62dvh] flex-col rounded-t-xl bg-paper text-ink shadow-[var(--shadow)]
+      className={`fixed inset-x-0 bottom-0 z-20 flex max-h-[62dvh] flex-col rounded-t-xl bg-paper text-ink shadow-[var(--shadow)]
         pb-[env(safe-area-inset-bottom)]
-        lg:inset-x-auto lg:bottom-3 lg:right-3 lg:top-3 lg:max-h-none lg:w-[416px] lg:rounded-lg"
+        land:left-auto land:right-[max(12px,env(safe-area-inset-right))] land:top-3 land:bottom-[max(12px,env(safe-area-inset-bottom))]
+        land:max-h-none land:w-[min(360px,46vw)] land:rounded-lg land:pb-0
+        lg:inset-x-auto lg:bottom-3 lg:right-3 lg:top-3 lg:max-h-none lg:w-[416px] lg:rounded-lg
+        ${concealOnMobile ? 'max-lg:hidden' : ''}`}
     >
       <header className="flex items-start justify-between gap-3 border-b border-rule px-5 pb-3 pt-4">
         <div className="min-w-0">
-          <h2 className="text-lg font-bold">判読結果</h2>
+          <h2 ref={headingRef} tabIndex={-1} className="text-lg font-bold">判読結果</h2>
           {center && (
             <p className="num mt-0.5 text-xs text-ink-2">
               {formatDms(center[1], 'lat')} {formatDms(center[0], 'lon')} 付近
@@ -76,9 +120,10 @@ export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetr
           </dl>
         )}
 
-        {/* 進み具合。終わった後も、どこで止まったか分かるように残す */}
+        {/* 進み具合。終わった後も、どこで止まったか分かるように残す。
+            読み上げは上の role="status" に任せ、ここは live region にしない */}
         {(running || state.status === 'error') && (
-          <ol className="mt-5 space-y-2.5" aria-live="polite">
+          <ol className="mt-5 space-y-2.5">
             {STAGE_ORDER.map((k, i) => {
               const st = state.stages[k];
               return (
@@ -94,10 +139,11 @@ export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetr
                   </span>
                   <span className={`min-w-0 ${st.status === 'waiting' ? 'text-ink-2' : ''}`}>
                     {st.message}
+                    {STATUS_TEXT[st.status] && <span className="sr-only">{STATUS_TEXT[st.status]}</span>}
                     {st.detail && <span className="block text-xs text-ink-2">{st.detail}</span>}
                   </span>
                   {st.status === 'running' && typeof st.progress === 'number' && (
-                    <span className="num ml-auto shrink-0 text-xs text-ink-2">{Math.round(st.progress * 100)}%</span>
+                    <span aria-hidden className="num ml-auto shrink-0 text-xs text-ink-2">{Math.round(st.progress * 100)}%</span>
                   )}
                   {st.status === 'running' && typeof st.progress !== 'number' && st.startedAt && <Elapsed since={st.startedAt} />}
                 </li>
@@ -167,7 +213,7 @@ export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetr
                       {c.label}
                     </td>
                     <td className="py-1.5 text-right">{(c.ratio * 100).toFixed(1)}%</td>
-                    <td className="py-1.5 pl-3 text-right text-ink-2">{formatArea(c.areaM2)}</td>
+                    <td className="whitespace-nowrap py-1.5 pl-3 text-right text-ink-2">{formatArea(c.areaM2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -226,5 +272,6 @@ export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetr
         )}
       </div>
     </aside>
+    </>
   );
 }

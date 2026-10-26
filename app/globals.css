@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* 横向きのスマホ（PC 幅でなく、高さが低い）。結果を下からのシートでなく右に出す。
+   MapApp.tsx の LANDSCAPE_PHONE と同じ条件 */
+@custom-variant land (@media (orientation: landscape) and (max-height: 540px) and (max-width: 1023.98px));
+
 /*
  * 色は測量図の「紙」と「インク」から取り、写真の上で目を引くものだけを航空図の注記色
  * （マゼンタ）にする。マゼンタは選択枠と、いま選ばれていることを示す箇所にだけ使う。
@@ -10,7 +14,7 @@
   --ink: #14212b;
   --ink-2: #4a5a66;
   --rule: #c9d1cc;
-  --survey: #e0218a;
+  --survey: #d01c80;   /* 白文字で 5.05:1、紙（--paper）の上の文字で 4.61:1（どちらも AA の 4.5:1 以上） */
   --survey-ink: #a30f61;
   --danger: #b4231b;
   --shadow: 0 1px 2px rgb(20 33 43 / 0.18), 0 8px 24px rgb(20 33 43 / 0.16);
@@ -100,6 +104,16 @@ body {
   }
 }
 
+/* 横向きのスマホでも、右に出した結果パネルの外へ逃がす。検索パネルを開いている間は結果パネルを隠すので逃がさない */
+@media (orientation: landscape) and (max-height: 540px) and (max-width: 1023.98px) {
+  .has-report:not(.search-open) .maplibregl-ctrl-top-right {
+    right: calc(min(360px, 46vw) + 24px + env(safe-area-inset-right));
+  }
+  .has-report:not(.search-open) .maplibregl-ctrl-bottom-right {
+    right: calc(min(360px, 46vw) + 12px + env(safe-area-inset-right));
+  }
+}
+
 /* ---- 選択枠：四隅のトンボと、解析中の走査線 ---------------------------------- */
 .frame {
   position: absolute;
@@ -108,7 +122,7 @@ body {
   transform-origin: 0 0;
   pointer-events: none;
   border: 1.5px solid var(--survey);
-  background: rgb(224 33 138 / 0.07);
+  background: rgb(208 28 128 / 0.07);
 }
 .frame .tick {
   position: absolute;
@@ -135,7 +149,7 @@ body {
   right: 0;
   height: 28%;
   top: -28%;
-  background: linear-gradient(to bottom, rgb(224 33 138 / 0), rgb(224 33 138 / 0.28) 85%, var(--survey));
+  background: linear-gradient(to bottom, rgb(208 28 128 / 0), rgb(208 28 128 / 0.28) 85%, var(--survey));
   animation: scan 1.8s linear infinite;
 }
 @keyframes scan {

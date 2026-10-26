@@ -14,6 +14,8 @@ import type { Place } from '@/lib/types';
 const ENDPOINT = 'https://nominatim.openstreetmap.org/search';
 const USER_AGENT = 'sat_ai_vision/0.1 (local research app; https://github.com/habe1111/sat-ai-vision)';
 const MIN_INTERVAL_MS = 1100;
+// 応答が止まっても直列のキューが詰まらないよう、1 件の待ちに上限を置く（本文の受け取りまで含む）
+const TIMEOUT_MS = 10_000;
 const TTL_MS = 24 * 60 * 60 * 1000;
 
 export const SEARCH_ATTRIBUTION = '検索：© OpenStreetMap contributors（Nominatim）';
@@ -93,9 +95,19 @@ export async function searchPlaces(query: string): Promise<Place[]> {
       countrycodes: 'jp',
       limit: '10',
     }).toString();
-    const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' } });
-    if (!res.ok) throw new Error(`検索サービスが応答しませんでした（HTTP ${res.status}）。少し待ってから再度お試しください。`);
-    return ((await res.json()) as NominatimItem[]).map(toPlace);
+    try {
+      const res = await fetch(url, {
+        headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!res.ok) throw new Error(`検索サービスが応答しませんでした（HTTP ${res.status}）。少し待ってから再度お試しください。`);
+      return ((await res.json()) as NominatimItem[]).map(toPlace);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'TimeoutError') {
+        throw new Error('検索サービスが応答しませんでした（時間切れ）。少し待ってから再度お試しください。');
+      }
+      throw e;
+    }
   });
   queue = run.catch(() => undefined);
   const places = await run;

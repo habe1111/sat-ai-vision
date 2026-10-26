@@ -24,10 +24,24 @@ export function SearchPanel({ open, onOpenChange, onSelect, selectedId, initialQ
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const prevOpen = useRef(open);
   const ranInitial = useRef(false);
 
   useEffect(() => {
-    if (open) inputRef.current?.focus({ preventScroll: true });
+    const wasOpen = prevOpen.current;
+    prevOpen.current = open;
+    if (open) {
+      inputRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    if (!wasOpen) return;
+    // 閉じたとき、フォーカスがパネルの中にあった（隠れて body に落ちる）なら、開くタブへ戻す
+    const active = document.activeElement;
+    if (!active || active === document.body || panelRef.current?.contains(active)) {
+      toggleRef.current?.focus({ preventScroll: true });
+    }
   }, [open]);
 
   async function search(q: string) {
@@ -69,6 +83,7 @@ export function SearchPanel({ open, onOpenChange, onSelect, selectedId, initialQ
     <>
       {/* 地図の左端のタブ。開いているときはパネルの右肩に付いて「閉じる」になる */}
       <button
+        ref={toggleRef}
         type="button"
         onClick={() => onOpenChange(!open)}
         aria-expanded={open}
@@ -82,6 +97,7 @@ export function SearchPanel({ open, onOpenChange, onSelect, selectedId, initialQ
       </button>
 
       <section
+        ref={panelRef}
         id="search-panel"
         aria-label="場所の検索"
         hidden={!open}
@@ -114,7 +130,7 @@ export function SearchPanel({ open, onOpenChange, onSelect, selectedId, initialQ
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Escape' && onOpenChange(false)}
             placeholder="地名やランドマーク（例：姫路城）"
-            className="min-w-0 flex-1 rounded-md border border-rule bg-white px-3 py-2.5 text-base text-ink placeholder:text-ink-2/70 focus:border-ink focus:outline-none"
+            className="min-w-0 flex-1 rounded-md border border-rule bg-white px-3 py-2.5 text-base text-ink placeholder:text-ink-2 focus:border-ink focus:outline-none"
           />
           <button
             type="submit"

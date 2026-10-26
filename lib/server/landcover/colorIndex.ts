@@ -50,5 +50,5 @@ export async function colorIndexLandCover(jpeg: Buffer, maxSide = 1024) {
     mask[p] = cr; mask[p + 1] = cg; mask[p + 2] = cb; mask[p + 3] = 255;
   }
   const overlay = await sharp(mask, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
-  return { counts, valid, overlay };
+  return { counts, valid, total: info.width * info.height, overlay };
 }

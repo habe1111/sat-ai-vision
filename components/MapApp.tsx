@@ -17,7 +17,7 @@ import {
   type GeoJSONSource,
   type StyleSpecification,
 } from 'maplibre-gl';
-import { type BBox, bboxToPolygon } from '@/lib/geo';
+import { type BBox, bboxFromPoints, bboxToPolygon } from '@/lib/geo';
 import { GSI_TILE_URL, IMAGERY_BANDS, IMAGERY_MAX_ZOOM } from '@/lib/imagery';
 import { chooseZoom } from '@/lib/selection';
 import type { Place } from '@/lib/types';
@@ -69,6 +69,38 @@ const LOCALE = {
 
 type Mode = 'idle' | 'selecting' | 'selected' | 'report';
 
+/** 横向きのスマホ。結果は下からのシートでなく右に出す（globals.css の land と同じ条件） */
+const LANDSCAPE_PHONE = '(orientation: landscape) and (max-height: 540px) and (max-width: 1023.98px)';
+
+type Padding = { top: number; bottom: number; left: number; right: number };
+
+/**
+ * fitBounds の余白が画面より大きいと地図が動けなくなるので、範囲を出す場所を 2 割は残す
+ */
+function fitPadding(p: Padding, width: number, height: number): Padding {
+  const sx = Math.min(1, (width * 0.8) / (p.left + p.right));
+  const sy = Math.min(1, (height * 0.8) / (p.top + p.bottom));
+  return {
+    top: Math.round(p.top * sy),
+    bottom: Math.round(p.bottom * sy),
+    left: Math.round(p.left * sx),
+    right: Math.round(p.right * sx),
+  };
+}
+
+/** 検索結果の場所へ地図を移し、印を置く */
+function showPlace(map: MapLibreMap, p: Place, markerRef: { current: Marker | null }) {
+  const el = document.createElement('div');
+  el.className = 'size-4 rounded-full border-[3px] border-white bg-[var(--survey)] shadow-[var(--shadow)]';
+  markerRef.current?.remove();
+  markerRef.current = new Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
+  // 広い場所（市町村など）は範囲が収まるように、施設は写真の細部が見えるズームで。
+  // essential を付けないので、OS で動きを減らす設定にしている端末ではアニメーションせずに移る
+  const small = !p.bbox || (p.bbox[2] - p.bbox[0] < 0.01 && p.bbox[3] - p.bbox[1] < 0.01);
+  if (small) map.flyTo({ center: [p.lon, p.lat], zoom: 17, bearing: 0 });
+  else map.fitBounds(p.bbox!, { padding: 48, maxZoom: 17, bearing: 0 });
+}
+
 export default function MapApp({ initialQuery }: { initialQuery: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
@@ -76,6 +108,8 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
   const [searchOpen, setSearchOpen] = useState(Boolean(initialQuery));
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const markerRef = useRef<Marker | null>(null);
+  // 地図の読み込み（'load'）より先に選ばれた場所。読み込めたらそこへ移る
+  const pendingPlaceRef = useRef<Place | null>(null);
 
   const [mode, setMode] = useState<Mode>('idle');
   const [bbox, setBbox] = useState<BBox | null>(null);
@@ -123,30 +157,53 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
   // ---- 検索結果を選んだとき ---------------------------------------------------------
   const onSelectPlace = useCallback(
     (p: Place) => {
-      if (!map) return;
       setSelectedPlace(p);
-      const el = document.createElement('div');
-      el.className = 'size-4 rounded-full border-[3px] border-white bg-[var(--survey)] shadow-[var(--shadow)]';
-      markerRef.current?.remove();
-      markerRef.current = new Marker({ element: el }).setLngLat([p.lon, p.lat]).addTo(map);
-      // 広い場所（市町村など）は範囲が収まるように、施設は写真の細部が見えるズームで
-      const small = !p.bbox || (p.bbox[2] - p.bbox[0] < 0.01 && p.bbox[3] - p.bbox[1] < 0.01);
-      if (small) map.flyTo({ center: [p.lon, p.lat], zoom: 17, bearing: 0, essential: true });
-      else map.fitBounds(p.bbox!, { padding: 48, maxZoom: 17, bearing: 0, essential: true });
+      if (map) showPlace(map, p, markerRef);
+      else pendingPlaceRef.current = p;
       // 画面の狭い端末では、地図が見えるようにパネルを閉じる
       if (window.matchMedia('(max-width: 639px)').matches) setSearchOpen(false);
     },
     [map],
   );
+  useEffect(() => {
+    if (!map || !pendingPlaceRef.current) return;
+    showPlace(map, pendingPlaceRef.current, markerRef);
+    pendingPlaceRef.current = null;
+  }, [map]);
 
   // ---- 範囲選択 -------------------------------------------------------------------
   const onSelectChange = useCallback((b: BBox) => setBbox(b), []);
   const onSelectDone = useCallback((b: BBox | null) => {
-    if (!b) return;          // ドラッグせずに離した
+    // ドラッグせずに離した・OS に操作を取られた。途中まで描いた枠は消して、選び直してもらう
+    if (!b) {
+      setBbox(null);
+      return;
+    }
     setBbox(b);
     setMode('selected');
   }, []);
   useAreaSelect(map, mode === 'selecting', onSelectChange, onSelectDone);
+
+  // キーボードでも選べるように、いま表示している範囲（パネルやボタンのかかる縁は除く）を選ぶ
+  const selectView = useCallback(() => {
+    if (!map) return;
+    const { width, height } = map.getContainer().getBoundingClientRect();
+    const left = Math.max(56, width * 0.15);
+    const right = width - Math.max(72, width * 0.15);
+    const top = Math.max(72, height * 0.15);
+    const bottom = height - Math.max(140, height * 0.2);
+    if (right <= left || bottom <= top) return;
+    // 地図が回転していても、見えている四隅を含む経緯度の矩形にする
+    const corners = [
+      map.unproject([left, top]),
+      map.unproject([right, top]),
+      map.unproject([right, bottom]),
+      map.unproject([left, bottom]),
+    ];
+    const lons = corners.map((c) => c.lng);
+    const lats = corners.map((c) => c.lat);
+    onSelectDone(bboxFromPoints([Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]));
+  }, [map, onSelectDone]);
 
   const beginSelect = useCallback(() => {
     reset();
@@ -163,17 +220,23 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
 
   const runAnalysis = useCallback(() => {
     if (!bbox || !map) return;
+    const wide = window.matchMedia('(min-width: 1024px)').matches;
+    const landscape = window.matchMedia(LANDSCAPE_PHONE).matches;
+    // PC 以外では結果のパネルが検索パネルと重なるので、検索は閉じて結果を見せる
+    if (!wide) setSearchOpen(false);
     setMode('report');
     setOverlayOn(true);
     void start(bbox);
-    // 結果のパネル（PC は右、スマホは下のシート）に隠れない位置へ、選んだ範囲を寄せる。
-    // 余白には、枠の外に付く座標・寸法のラベルと、検索タブ・地図の操作ボタンの分も含める
-    const wide = window.matchMedia('(min-width: 1024px)').matches;
+    // 結果のパネル（PC と横向きのスマホは右、縦向きのスマホは下のシート）に隠れない位置へ、
+    // 選んだ範囲を寄せる。余白には、枠の外に付く座標・寸法のラベルと、検索タブ・地図の操作ボタンの分も含める
+    const { innerWidth: w, innerHeight: h } = window;
     const padding = wide
-      ? { top: 72, bottom: 120, left: 64, right: 440 + 64 }
-      : { top: 96, bottom: Math.round(window.innerHeight * 0.62) + 56, left: 56, right: 72 };
-    map.fitBounds(bbox, { padding, maxZoom: 18, bearing: map.getBearing(), duration: 600 });
-  }, [bbox, map, start]);
+      ? { top: 72, bottom: 120, left: searchOpen ? 360 + 64 : 64, right: 440 + 64 }
+      : landscape
+        ? { top: 48, bottom: 72, left: 56, right: Math.min(360, w * 0.46) + 24 + 64 }
+        : { top: 96, bottom: Math.round(h * 0.62) + 56, left: 56, right: 72 };
+    map.fitBounds(bbox, { padding: fitPadding(padding, w, h), maxZoom: 18, bearing: map.getBearing(), duration: 600 });
+  }, [bbox, map, start, searchOpen]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -217,7 +280,7 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
   const reportOpen = mode === 'report';
 
   return (
-    <main className={`fixed inset-0 ${reportOpen ? 'has-report' : ''}`}>
+    <main className={`fixed inset-0 ${reportOpen ? 'has-report' : ''} ${searchOpen ? 'search-open' : ''}`}>
       <h1 className="sr-only">空中写真 AI 判読</h1>
       {/* MapLibre の CSS（.maplibregl-map { position: relative }）はレイヤー外なので、Tailwind の
           absolute より強い。高さが 0 にならないよう、位置は style で直接与える */}
@@ -240,7 +303,9 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
         choice={choice}
         disabled={!map}
         hiddenOnMobile={reportOpen}
+        searchOpen={searchOpen}
         onBegin={beginSelect}
+        onSelectView={selectView}
         onCancel={cancelSelect}
         onAnalyze={runAnalysis}
       />
@@ -252,6 +317,7 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
           onOverlayChange={setOverlayOn}
           onClose={cancelSelect}
           onRetry={runAnalysis}
+          concealOnMobile={searchOpen}
         />
       )}
     </main>

@@ -10,7 +10,10 @@
  * - **15 クラスを 7 区分にまとめる。** 針葉樹と広葉樹の区別（吉野の杉林が広葉樹になる）や、
  *   温室・ぶどう畑・プールは日本では当てにならない。区分ごとに確率を足してから最大を取る。
  *
- * モデル（約 98 MB）はリポジトリに入れず models/ に置く（npm run setup:model）。
+ * onnxruntime-node の推論は 1 パッチごとにメインスレッドをふさぐ。2 つの解析が CPU を取り合わないよう、
+ * 同時に動かす推論は 1 本に絞り、中止された解析はパッチの切れ目で打ち切る。
+ *
+ * モデル（約 98 MB）はリポジトリに入れず models/ に置く（npm run setup）。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -83,20 +86,41 @@ function starts(len: number): number[] {
   return out;
 }
 
+/** 推論を 1 本ずつ順に動かす（前の推論が終わるまで次は待つ） */
+let queue: Promise<unknown> = Promise.resolve();
+function exclusive<T>(fn: () => Promise<T>): Promise<T> {
+  const run = queue.then(fn);
+  queue = run.catch(() => {});
+  return run;
+}
+
 export type FlairResult = {
   counts: number[];          // 区分ごとの画素数（FLAIR_GROUPS の順）
   valid: number;
+  total: number;             // 集計した画素の総数（写真の無い黒い画素も含む）
   overlay: Buffer;           // PNG（区分の色を塗った重ね絵）
   scale: number;             // 推論に使った拡大率
   workMpp: number;           // 推論した解像度（m/px）
   seconds: number;
 };
 
-export async function runFlair(
+/** signal が中止されると、次のパッチの前で AbortError を投げる */
+export function runFlair(
   jpeg: Buffer,
   mpp: number,
+  signal: AbortSignal,
   onProgress?: (done: number, total: number) => void,
 ): Promise<FlairResult> {
+  return exclusive(() => infer(jpeg, mpp, signal, onProgress));
+}
+
+async function infer(
+  jpeg: Buffer,
+  mpp: number,
+  signal: AbortSignal,
+  onProgress?: (done: number, total: number) => void,
+): Promise<FlairResult> {
+  signal.throwIfAborted();   // 順番を待つ間に中止されていれば始めない
   const t0 = performance.now();
   const sess = await session();
   const meta = await sharp(jpeg).metadata();
@@ -129,6 +153,7 @@ export async function runFlair(
   let done = 0;
   for (const py of ys) {
     for (const px of xs) {
+      signal.throwIfAborted();
       for (let y = 0; y < PATCH; y++) {
         for (let x = 0; x < PATCH; x++) {
           const si = ((py + y) * W + (px + x)) * 3;
@@ -177,5 +202,5 @@ export async function runFlair(
     mask[i * 4] = r; mask[i * 4 + 1] = gg; mask[i * 4 + 2] = b; mask[i * 4 + 3] = 255;
   }
   const overlay = await sharp(mask, { raw: { width: OW, height: OH, channels: 4 } }).png().toBuffer();
-  return { counts, valid, overlay, scale, workMpp: mpp / scale, seconds: (performance.now() - t0) / 1000 };
+  return { counts, valid, total: OW * OH, overlay, scale, workMpp: mpp / scale, seconds: (performance.now() - t0) / 1000 };
 }
