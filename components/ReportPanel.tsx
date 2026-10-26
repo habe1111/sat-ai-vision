@@ -3,6 +3,7 @@
  * 解析結果のパネル（判読調書）。PC では右側、スマホでは下から出す。
  * 結果は届いた順に埋まっていく（写真 → 土地被覆 → AI の所見）。
  */
+import { useEffect, useState } from 'react';
 import type { AnalysisState, StageKey } from '@/lib/client/useAnalysis';
 import { bboxCenter, bboxSizeMeters, formatArea, formatDms, formatLength } from '@/lib/geo';
 import { IconAlert, IconCheck, IconClose } from '@/components/icons';
@@ -16,6 +17,18 @@ type Props = {
 };
 
 const STAGE_ORDER: StageKey[] = ['imagery', 'landcover', 'ai'];
+
+/**
+ * 動いている段の経過秒数。手元の VLM は 1 枚に数十秒かかるので、止まっていないことを示す
+ */
+function Elapsed({ since }: { since: number }) {
+  const [now, setNow] = useState(since);
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return <span className="num ml-auto shrink-0 text-xs text-ink-2">{Math.max(0, Math.floor((now - since) / 1000))} 秒</span>;
+}
 
 export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetry }: Props) {
   const { meta, landCover, ai, bbox } = state;
@@ -84,8 +97,9 @@ export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetr
                     {st.detail && <span className="block text-xs text-ink-2">{st.detail}</span>}
                   </span>
                   {st.status === 'running' && typeof st.progress === 'number' && (
-                    <span className="num ml-auto text-xs text-ink-2">{Math.round(st.progress * 100)}%</span>
+                    <span className="num ml-auto shrink-0 text-xs text-ink-2">{Math.round(st.progress * 100)}%</span>
                   )}
+                  {st.status === 'running' && typeof st.progress !== 'number' && st.startedAt && <Elapsed since={st.startedAt} />}
                 </li>
               );
             })}

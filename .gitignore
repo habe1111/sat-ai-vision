@@ -44,3 +44,4 @@ next-env.d.ts
 e2e-out/
 models/*.onnx
 tools/flair-export/.venv/
+CLAUDE.local.md

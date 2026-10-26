@@ -8,7 +8,7 @@ import type { BBox } from '@/lib/geo';
 import type { AiReport, AnalysisEvent, AnalysisMeta, LandCover } from '@/lib/types';
 
 export type StageKey = 'imagery' | 'landcover' | 'ai';
-export type StageState = { status: 'waiting' | 'running' | 'done' | 'skipped' | 'failed'; message: string; progress?: number; detail?: string };
+export type StageState = { status: 'waiting' | 'running' | 'done' | 'skipped' | 'failed'; message: string; progress?: number; detail?: string; startedAt?: number };
 
 export type AnalysisState = {
   status: 'idle' | 'running' | 'done' | 'error';
@@ -49,7 +49,9 @@ export function useAnalysis() {
           ORDER.forEach((k, i) => {
             if (i < idx && stages[k].status === 'running') stages[k] = { ...stages[k], status: 'done' };
           });
-          stages[ev.stage] = { status: 'running', message: ev.message, progress: ev.progress, detail: ev.detail };
+          // 同じ段の進み具合の更新では、始まった時刻を引き継ぐ
+          const startedAt = s.stages[ev.stage].status === 'running' ? s.stages[ev.stage].startedAt : Date.now();
+          stages[ev.stage] = { status: 'running', message: ev.message, progress: ev.progress, detail: ev.detail, startedAt };
           return { ...s, stages };
         }
         case 'meta':
