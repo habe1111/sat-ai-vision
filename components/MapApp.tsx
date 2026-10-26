@@ -162,11 +162,18 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
   }, [reset]);
 
   const runAnalysis = useCallback(() => {
-    if (!bbox) return;
+    if (!bbox || !map) return;
     setMode('report');
     setOverlayOn(true);
     void start(bbox);
-  }, [bbox, start]);
+    // 結果のパネル（PC は右、スマホは下のシート）に隠れない位置へ、選んだ範囲を寄せる。
+    // 余白には、枠の外に付く座標・寸法のラベルと、検索タブ・地図の操作ボタンの分も含める
+    const wide = window.matchMedia('(min-width: 1024px)').matches;
+    const padding = wide
+      ? { top: 72, bottom: 120, left: 64, right: 440 + 64 }
+      : { top: 96, bottom: Math.round(window.innerHeight * 0.62) + 56, left: 56, right: 72 };
+    map.fitBounds(bbox, { padding, maxZoom: 18, bearing: map.getBearing(), duration: 600 });
+  }, [bbox, map, start]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

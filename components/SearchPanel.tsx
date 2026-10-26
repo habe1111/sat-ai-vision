@@ -75,7 +75,7 @@ export function SearchPanel({ open, onOpenChange, onSelect, selectedId, initialQ
         aria-controls="search-panel"
         className={`fixed z-30 flex items-center gap-1.5 bg-paper text-ink shadow-[var(--shadow)] transition-[left] duration-200 ease-out
           top-[max(12px,env(safe-area-inset-top))] rounded-r-md py-3 pl-2 pr-2 [writing-mode:vertical-rl]
-          ${open ? 'left-[min(360px,calc(100vw-48px))]' : 'left-0'}`}
+          ${open ? 'max-sm:hidden sm:left-[360px]' : 'left-0'}`}
       >
         {open ? <IconClose className="size-4" /> : <IconSearch className="size-4" />}
         <span className="text-sm font-bold tracking-[0.2em]">{open ? '閉じる' : '場所を検索'}</span>
@@ -85,9 +85,16 @@ export function SearchPanel({ open, onOpenChange, onSelect, selectedId, initialQ
         id="search-panel"
         aria-label="場所の検索"
         hidden={!open}
-        className="fixed left-0 top-0 z-30 flex max-h-dvh w-[min(360px,calc(100vw-48px))] flex-col bg-paper text-ink shadow-[var(--shadow)]
-          pt-[max(12px,env(safe-area-inset-top))] sm:rounded-br-lg"
+        className="fixed left-0 top-0 z-30 flex max-h-dvh w-full flex-col bg-paper text-ink shadow-[var(--shadow)]
+          pt-[max(12px,env(safe-area-inset-top))] sm:w-[360px] sm:rounded-br-lg"
       >
+        {/* 狭い画面ではパネルが全幅になるので、閉じるボタンはここに置く（地図のボタンと重ねない） */}
+        <div className="flex items-center justify-between px-4 pb-2 sm:hidden">
+          <h2 className="font-bold">場所を検索</h2>
+          <button type="button" onClick={() => onOpenChange(false)} className="-mr-2 rounded-md p-2 hover:bg-paper-2" aria-label="検索を閉じる">
+            <IconClose className="size-5" />
+          </button>
+        </div>
         <form
           role="search"
           className="flex gap-2 border-b border-rule px-4 pb-4 pt-1"

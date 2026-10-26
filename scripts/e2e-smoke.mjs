@@ -60,11 +60,20 @@ try {
   const btn = await page.waitForSelector('xpath/.//button[contains(., "範囲を選んで解析")]');
   await btn.click();
   const { width, height } = VIEWPORT;
-  const x0 = width * 0.38, y0 = height * 0.3, x1 = width * 0.62, y1 = height * 0.6;
-  await page.mouse.move(x0, y0);
-  await page.mouse.down();
-  for (let i = 1; i <= 10; i++) await page.mouse.move(x0 + ((x1 - x0) * i) / 10, y0 + ((y1 - y0) * i) / 10);
-  await page.mouse.up();
+  // スマホは画面が狭いので、一辺 60 m 以上になるよう幅いっぱいに近くなぞる
+  const [fx0, fx1] = VIEWPORT.isMobile ? [0.12, 0.88] : [0.38, 0.62];
+  const x0 = width * fx0, y0 = height * 0.3, x1 = width * fx1, y1 = height * 0.6;
+  if (VIEWPORT.hasTouch) {
+    // スマホは指でなぞる（タッチの Pointer Events で選べることを確かめる）
+    await page.touchscreen.touchStart(x0, y0);
+    for (let i = 1; i <= 10; i++) await page.touchscreen.touchMove(x0 + ((x1 - x0) * i) / 10, y0 + ((y1 - y0) * i) / 10);
+    await page.touchscreen.touchEnd();
+  } else {
+    await page.mouse.move(x0, y0);
+    await page.mouse.down();
+    for (let i = 1; i <= 10; i++) await page.mouse.move(x0 + ((x1 - x0) * i) / 10, y0 + ((y1 - y0) * i) / 10);
+    await page.mouse.up();
+  }
   await page.waitForSelector('xpath/.//button[contains(., "この範囲を解析")]', { timeout: 5000 });
   ok('ドラッグで範囲を選べた');
   await shot(page, '4-selected');
@@ -80,7 +89,8 @@ try {
   const hasLayer = await page.evaluate(() => Boolean(window.__map.getLayer('landcover')));
   if (hasLayer) ok('土地被覆を地図に重ねた');
   else fail('土地被覆のレイヤーが地図に無い');
-  await new Promise((r) => setTimeout(r, 500));
+  await page.waitForFunction(() => !window.__map.isMoving() && window.__map.areTilesLoaded(), { timeout: 15000 });
+  await new Promise((r) => setTimeout(r, 300));
   await shot(page, '5-landcover');
 
   if (WAIT_AI) {
