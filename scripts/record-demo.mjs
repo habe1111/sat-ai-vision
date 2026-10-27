@@ -5,7 +5,7 @@
  *   npm run demo                  # BASE_URL・CHROME_PATH・OUT_DIR で上書きできる
  *
  * 流れ：場所を絞り込んで検索 → 解析する範囲を選ぶ → 解析中 → 結果を確かめる。
- * 解析の待ち時間は早送りにし、字幕で知らせる。出力は OUT_DIR の demo.mp4 と、README に埋め込む demo.gif。
+ * 解析は実際の速さのまま写す。出力は OUT_DIR の demo.mp4 と、README に埋め込む demo.gif（GIF_FPS でコマ数を変えられる）。
  * 同じ範囲の解析結果が残っていると「解析中」が写らないので、前回撮った範囲のキャッシュだけは消してから撮る。
  */
 import { execFileSync } from 'node:child_process';
@@ -18,7 +18,7 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const CHROME_PATH = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const OUT_DIR = process.env.OUT_DIR || 'docs/media';
 const VIEWPORT = { width: 1280, height: 800, deviceScaleFactor: 1 };
-const WAIT_SPEED = 6; // 解析の待ち時間を何倍速にするか
+const GIF_FPS = Number(process.env.GIF_FPS || 12);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'sat-demo-'));
@@ -65,15 +65,20 @@ const browser = await puppeteer.launch({
   headless: true,
   args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'],
 });
-const marks = [];
-let t0 = 0;
-const mark = (name) => marks.push({ name, t: (Date.now() - t0) / 1000 });
+let recorder;
 try {
   const page = await browser.newPage();
   await page.setViewport(VIEWPORT);
   // 撮り直しても同じ絵になるよう、福岡市の博多駅あたりから始める
   await page.goto(`${BASE_URL}/#map=16/33.5900/130.4207`, { waitUntil: 'networkidle2' });
   await page.waitForFunction(() => window.__map?.loaded() && window.__map.areTilesLoaded(), { timeout: 30000 });
+  // 検索で飛ぶ途中は一度縮小する。その写真を読み込んでいないと黒く写るので、録画の前に先読みしておく
+  for (const zoom of [12, 13, 14]) {
+    await page.evaluate((z) => window.__map.jumpTo({ center: [130.387, 33.592], zoom: z }), zoom);
+    await page.waitForFunction(() => window.__map.areTilesLoaded(), { timeout: 30000 });
+  }
+  await page.evaluate(() => window.__map.jumpTo({ center: [130.4207, 33.59], zoom: 16 }));
+  await page.waitForFunction(() => window.__map.areTilesLoaded(), { timeout: 30000 });
   await page.evaluate(installOverlay);
   const caption = (title, sub = '', left = 72) => page.evaluate((a, b, c) => window.__caption(a, b, c), title, sub, left);
 
@@ -98,8 +103,7 @@ try {
   const clickText = async (text) => clickEl(await page.waitForSelector(`xpath/.//button[contains(., "${text}")]`));
 
   await moveTo(pos.x, pos.y, 1);
-  t0 = Date.now();
-  const recorder = await page.screencast({ path: raw, fps: 30, quality: 18 });
+  recorder = await page.screencast({ path: raw, fps: 30, quality: 18 });
   await sleep(1200);
 
   // ① 絞り込み検索：広い語で探し、語を足して絞り込み、候補から選ぶ
@@ -149,14 +153,12 @@ try {
   await sleep(900);
   await clickText('この範囲を解析');
 
-  // ③ 解析中：写真の取得 → 土地被覆 → AI の判読。待ち時間は後で早送りにする
+  // ③ 解析中：写真の取得 → 土地被覆 → AI の判読
   await caption('③ 解析中', '空中写真の取得 → 土地被覆の判定 → AI の判読');
   await sleep(2500);
-  mark('wait-start');
-  await caption('③ 解析中', `手元のパソコンで処理しています（${WAIT_SPEED} 倍速）`);
+  await caption('③ 解析中', '手元のパソコンで処理しています');
   await page.waitForSelector('xpath/.//h3[contains(., "土地被覆の構成")]', { timeout: 300000 });
   await page.waitForSelector('xpath/.//h3[contains(., "AI の所見")]', { timeout: 300000 });
-  mark('wait-end');
   await page.waitForFunction(() => !window.__map.isMoving() && window.__map.areTilesLoaded(), { timeout: 20000 });
   await sleep(600);
 
@@ -189,29 +191,28 @@ try {
   await caption('');
   await sleep(600);
   await recorder.stop();
+  recorder = undefined;
   const src = await page.$eval('aside img', (i) => i.getAttribute('src'));
   const id = src?.match(/\/api\/analyses\/([0-9a-f]+)\//)?.[1];
   if (id) fs.writeFileSync(LAST_ID, id);
-} finally {
+} catch (e) {
+  // 録画を止めてから閉じる（止めずに閉じると、元の例外が録画側のエラーに隠れる）
+  await recorder?.stop().catch(() => {});
   await browser.close();
+  throw e;
 }
+await browser.close();
 
-// 仕上げ：待ち時間だけ早送りにして mp4（README から開く）と gif（README に埋め込む）を作る
+// 仕上げ：mp4（GitHub にアップロードして README で再生する）と gif（README に埋め込む）を作る
 fs.mkdirSync(OUT_DIR, { recursive: true });
-const ws = marks.find((m) => m.name === 'wait-start')?.t;
-const we = marks.find((m) => m.name === 'wait-end')?.t;
-const filter = ws && we
-  ? `[0:v]trim=0:${ws},setpts=PTS-STARTPTS[a];[0:v]trim=${ws}:${we},setpts=(PTS-STARTPTS)/${WAIT_SPEED}[b];` +
-    `[0:v]trim=${we},setpts=PTS-STARTPTS[c];[a][b][c]concat=n=3:v=1[v]`
-  : '[0:v]null[v]';
 const mp4 = path.join(OUT_DIR, 'demo.mp4');
-execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', raw, '-filter_complex', filter, '-map', '[v]',
+execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', raw,
   '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '24', '-preset', 'slow', '-movflags', '+faststart', '-r', '30', mp4]);
 const gif = path.join(OUT_DIR, 'demo.gif');
 execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', mp4, '-filter_complex',
-  // 空中写真は細かく GIF が重くなるので、幅 800・6 コマ/秒・96 色に抑える（約 10 MB）
-  'fps=6,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=96:stats_mode=diff[p];[s1][p]paletteuse=dither=none:diff_mode=rectangle',
+  // 空中写真は細かく GIF が重くなるので、幅 800・96 色に抑える
+  `fps=${GIF_FPS},scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=96:stats_mode=diff[p];[s1][p]paletteuse=dither=none:diff_mode=rectangle`,
   '-loop', '0', gif]);
 fs.rmSync(work, { recursive: true, force: true });
 const mb = (f) => (fs.statSync(f).size / 1e6).toFixed(1);
-console.log(`✓ ${mp4}（${mb(mp4)} MB）・${gif}（${mb(gif)} MB）待ち ${ws?.toFixed(1)}〜${we?.toFixed(1)} 秒を ${WAIT_SPEED} 倍速`);
+console.log(`✓ ${mp4}（${mb(mp4)} MB）・${gif}（${mb(gif)} MB、${GIF_FPS} コマ/秒）`);
