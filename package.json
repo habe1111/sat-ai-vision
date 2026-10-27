@@ -12,6 +12,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "e2e": "node scripts/e2e-smoke.mjs",
+    "demo": "node scripts/record-demo.mjs",
     "setup": "node scripts/setup.mjs"
   },
   "dependencies": {

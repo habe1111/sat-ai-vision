@@ -22,6 +22,7 @@ npm run lint && npm run typecheck
 BASE_URL=http://localhost:3000 npm run e2e                  # PC
 BASE_URL=http://localhost:3000 VIEWPORT=mobile npm run e2e  # スマホ（指でなぞる）。横向きは VIEWPORT=landscape
 REQUIRE_AI=1 BASE_URL=http://localhost:3000 npm run e2e      # AI の所見まで必須にする
+BASE_URL=http://localhost:3000 npm run demo                  # README の説明動画を撮り直す（docs/media/）
 ollama serve                # AI の判読（Ollama）に必要
 ```
 
@@ -45,3 +46,5 @@ ollama serve                # AI の判読（Ollama）に必要
 - `next.config.ts` は create-next-app が入れた設定（`cacheComponents`・Tailwind のローダー）を消さない。
   `searchParams` を読む部分は `<Suspense>` で囲む。
 - E2E のスクショは、画像の読み込みと地図の移動が終わってから撮る（途中だと枠と重ね絵がずれて写る）。
+- **MapLibre の `m.remove()` は URL の `#map=` を消す。** 開発中は React が地図を作り直すので、片付けで hash を戻している（消えると共有リンクが初期位置になる）。
+- MapLibre のズームは 512 px タイル基準。ズーム 16 で約 1 m/px（地理院タイルの z17 相当）。

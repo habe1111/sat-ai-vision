@@ -3,7 +3,10 @@
 地図で範囲を選ぶと、その範囲の空中写真を手元のサーバーで解析し、写っているものを AI が日本語で説明する Web アプリです。
 個人の検証・ポートフォリオ用です。
 
-![PC の画面：姫路城周辺を選び、土地被覆と AI の所見を表示したところ](docs/images/desktop-report.png)
+[![説明動画：「福岡タワー」を検索し、百道浜の範囲を選んで解析し、土地被覆と AI の所見を確かめるまで](docs/media/demo.gif)](docs/media/demo.mp4)
+
+① 場所を絞り込んで検索 → ② 解析する範囲を選ぶ → ③ 解析中（待ち時間は 6 倍速）→ ④ 結果を確かめる（約 50 秒）。
+動画をクリックすると、文字まで読める高画質版（MP4）が開きます。
 
 <sub>空中写真：国土地理院「全国最新写真（シームレス）」を加工して作成</sub>
 
@@ -180,3 +183,6 @@ AI が使えないときは「所見を出せない理由」が出れば通り�
 
 土地被覆モデルは GitHub Releases（タグ `models-v1`）から配布しています。作り直したときは、
 `tools/flair-export` で書き出した `models/flair_rgb15.onnx` を Releases に上げ、`scripts/setup.mjs` の SHA-256 を更新してください。
+
+冒頭の説明動画は `npm run demo` で撮り直せます（`npm run dev` と `ollama serve` を起動しておく）。
+headless Chrome で操作して録画し、ffmpeg で `docs/media/demo.mp4` と `demo.gif` に仕上げます。
