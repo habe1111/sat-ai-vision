@@ -150,7 +150,11 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
     if (process.env.NODE_ENV !== 'production') (window as unknown as { __map?: MapLibreMap }).__map = m;
     return () => {
       setMap(null);
+      // m.remove() は URL の #map= を消す。開発中は React が地図を作り直すので、
+      // 消えたままだと共有リンクの位置が初期位置で上書きされる
+      const { hash } = window.location;
       m.remove();
+      if (hash && !window.location.hash) history.replaceState(history.state, '', hash);
     };
   }, []);
 
