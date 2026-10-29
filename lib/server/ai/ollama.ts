@@ -29,6 +29,11 @@ export async function ollamaStatus(): Promise<{ ok: true } | { ok: false; reason
 }
 
 export async function ollamaReport(system: string, user: string, jpeg: Buffer, signal?: AbortSignal): Promise<RawReport> {
+  return normalizeReport(await ollamaJson(system, user, [jpeg], REPORT_SCHEMA, signal));
+}
+
+/** 画像と指示を渡し、JSON Schema の形で答えさせる。読み取った値は呼んだ側で検める */
+export async function ollamaJson(system: string, user: string, jpegs: Buffer[], schema: object, signal?: AbortSignal): Promise<unknown> {
   // 画面側の中断を fetch に直接渡す。ollama-js の abort() は応答が返り始める前（モデルの読み込み中など）には効かない
   const client = new Ollama({
     host: OLLAMA_HOST,
@@ -42,23 +47,21 @@ export async function ollamaReport(system: string, user: string, jpeg: Buffer, s
   const stream = await client.chat({
     model: OLLAMA_MODEL,
     stream: true,
-    format: REPORT_SCHEMA as unknown as object,
+    format: schema,
     // 考えさせると 1 枚に数十秒〜十数分と読めず、採用した版は考えさせなくても質が同程度だった
     think: false,
     options: { temperature: 0.2, num_ctx: 16384 },
     messages: [
       { role: 'system', content: system },
-      { role: 'user', content: user, images: [jpeg.toString('base64')] },
+      { role: 'user', content: user, images: jpegs.map((j) => j.toString('base64')) },
     ],
   });
   let text = '';
   // 考えた内容（message.thinking）が混ざっても、答えの本文だけをつなぐ
   for await (const part of stream) text += part.message.content;
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(text);
+    return JSON.parse(text);
   } catch {
     throw new Error('AI の出力を JSON として読み取れませんでした。');
   }
-  return normalizeReport(parsed);
 }

@@ -1,24 +1,34 @@
 'use client';
 /**
  * 解析結果のパネル（判読調書）。PC では右側、スマホでは下から出す。
- * 結果は届いた順に埋まっていく（写真 → 土地被覆 → AI の所見）。
+ * 結果は届いた順に埋まっていく（写真 → 土地被覆 → AI の所見）。終わった後は AI に追加で質問できる。
  */
-import { useEffect, useRef, useState } from 'react';
-import type { AnalysisState, StageKey, StageState } from '@/lib/client/useAnalysis';
+import { useEffect, useRef } from 'react';
+import type { AnalysisState, StageKey } from '@/lib/client/useAnalysis';
 import { bboxCenter, bboxSizeMeters, formatArea, formatDms, formatLength } from '@/lib/geo';
-import { IconAlert, IconCheck, IconClose } from '@/components/icons';
+import { REGION_LABEL, regionCell } from '@/lib/regions';
+import type { Highlight, LandCoverClass } from '@/lib/types';
+import { AskSection } from '@/components/AskSection';
+import { LandCoverSection } from '@/components/LandCoverSection';
+import { STAGE_ORDER, StageTimeline } from '@/components/StageTimeline';
+import { IconAlert, IconClose } from '@/components/icons';
 
 type Props = {
   state: AnalysisState;
   overlayOn: boolean;
   onOverlayChange: (on: boolean) => void;
+  /** 写真に重ねる土地被覆の絵（区分を選んでいれば、その色だけを残したもの） */
+  overlaySrc: string | null;
+  /** 写真と地図に示している区分・区画 */
+  highlight: Highlight;
+  onClassesChange: (keys: string[]) => void;
+  onShowHighlight: (h: Highlight) => void;
+  onClearHighlight: () => void;
   onClose: () => void;
   onRetry: () => void;
   /** 狭い画面で検索パネルを開いている間は、重ならないように隠す（中身はそのまま残す） */
   concealOnMobile: boolean;
 };
-
-const STAGE_ORDER: StageKey[] = ['imagery', 'landcover', 'ai'];
 
 /** スクリーンリーダーに伝える、段の切り替わり */
 const STAGE_RUNNING: Record<StageKey, string> = {
@@ -26,13 +36,6 @@ const STAGE_RUNNING: Record<StageKey, string> = {
   landcover: '土地被覆を判定しています',
   ai: 'AI が写真を判読しています',
 };
-const STATUS_TEXT: Partial<Record<StageState['status'], string>> = {
-  running: '（実行中）',
-  done: '（完了）',
-  failed: '（失敗）',
-  skipped: '（行えず）',
-};
-
 /**
  * 読み上げる短い文。毎秒変わる経過秒数や % は入れない（そのたびに読み上げが積まれるため）。
  * エラーは role="alert" の側で知らせるので、ここでは空にする
@@ -50,24 +53,25 @@ function announcement(state: AnalysisState): string {
   return STAGE_RUNNING[k];
 }
 
-/**
- * 動いている段の経過秒数。手元の VLM は 1 枚に数十秒かかるので、止まっていないことを示す
- */
-function Elapsed({ since }: { since: number }) {
-  const [now, setNow] = useState(since);
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-  return <span aria-hidden className="num ml-auto shrink-0 text-xs text-ink-2">{Math.max(0, Math.floor((now - since) / 1000))} 秒</span>;
+/** 写真と地図にいま何を示しているか */
+function describeHighlight(h: Highlight, classes: LandCoverClass[]): string {
+  const names = h.classes.map((k) => classes.find((c) => c.key === k)?.label).filter(Boolean);
+  const parts = [];
+  if (names.length) parts.push(`${names.join('・')}の色だけ`);
+  if (h.region) parts.push(`${REGION_LABEL[h.region]}の区画`);
+  return `${parts.join('と')}を表示しています。`;
 }
 
-export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetry, concealOnMobile }: Props) {
+export function ReportPanel({
+  state, overlayOn, onOverlayChange, overlaySrc, highlight, onClassesChange, onShowHighlight, onClearHighlight,
+  onClose, onRetry, concealOnMobile,
+}: Props) {
   const { meta, landCover, ai, bbox } = state;
-  const running = state.status === 'running';
   const size = bbox ? bboxSizeMeters(bbox) : null;
   const center = bbox ? bboxCenter(bbox) : null;
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const overlayToggleRef = useRef<HTMLInputElement>(null);
+  const focus = highlight.region ? regionCell(highlight.region) : null;
 
   // 開いたら見出しへフォーカスを移す。押した「この範囲を解析」は消えるので、body に落とさない
   useEffect(() => {
@@ -120,37 +124,8 @@ export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetr
           </dl>
         )}
 
-        {/* 進み具合。終わった後も、どこで止まったか分かるように残す。
-            読み上げは上の role="status" に任せ、ここは live region にしない */}
-        {(running || state.status === 'error') && (
-          <ol className="mt-5 space-y-2.5">
-            {STAGE_ORDER.map((k, i) => {
-              const st = state.stages[k];
-              return (
-                <li key={k} className="flex items-center gap-3 text-sm">
-                  <span
-                    className={`num grid size-6 shrink-0 place-items-center rounded-full border text-xs
-                      ${st.status === 'done' ? 'border-ink bg-ink text-paper' : ''}
-                      ${st.status === 'running' ? 'border-survey text-survey' : ''}
-                      ${st.status === 'failed' ? 'border-danger text-danger' : ''}
-                      ${st.status === 'waiting' || st.status === 'skipped' ? 'border-rule text-ink-2' : ''}`}
-                  >
-                    {st.status === 'done' ? <IconCheck className="size-3.5" /> : i + 1}
-                  </span>
-                  <span className={`min-w-0 ${st.status === 'waiting' ? 'text-ink-2' : ''}`}>
-                    {st.message}
-                    {STATUS_TEXT[st.status] && <span className="sr-only">{STATUS_TEXT[st.status]}</span>}
-                    {st.detail && <span className="block text-xs text-ink-2">{st.detail}</span>}
-                  </span>
-                  {st.status === 'running' && typeof st.progress === 'number' && (
-                    <span aria-hidden className="num ml-auto shrink-0 text-xs text-ink-2">{Math.round(st.progress * 100)}%</span>
-                  )}
-                  {st.status === 'running' && typeof st.progress !== 'number' && st.startedAt && <Elapsed since={st.startedAt} />}
-                </li>
-              );
-            })}
-          </ol>
-        )}
+        {/* 解析の流れ。終わった後も、段ごとにかかった時間と、どこで止まったかが分かるように残す */}
+        <StageTimeline state={state} />
 
         {state.error && (
           <div role="alert" className="mt-5 flex gap-3 rounded-md border border-danger/40 bg-white px-4 py-3 text-sm">
@@ -170,14 +145,42 @@ export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetr
             <div className="relative overflow-hidden rounded-md bg-ink" style={{ aspectRatio: `${meta.widthPx} / ${meta.heightPx}` }}>
               {/* eslint-disable-next-line @next/next/no-img-element -- 手元のサーバーが作った画像をそのまま見せる */}
               <img src={meta.imageUrl} alt="解析に使った空中写真" className="absolute inset-0 size-full object-cover" />
-              {landCover?.overlayUrl && overlayOn && (
+              {overlaySrc && overlayOn && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={landCover.overlayUrl} alt="" className="absolute inset-0 size-full object-cover opacity-60" />
+                <img
+                  src={overlaySrc}
+                  alt=""
+                  className={`absolute inset-0 size-full object-cover ${highlight.classes.length ? 'opacity-80' : 'opacity-60'}`}
+                />
+              )}
+              {focus && (
+                <div
+                  aria-hidden
+                  className="absolute border-2 border-survey shadow-[0_0_0_9999px_rgb(13_20_24/0.35)]"
+                  style={{ left: `${focus.col * 33.333}%`, top: `${focus.row * 33.333}%`, width: '33.334%', height: '33.334%' }}
+                />
               )}
             </div>
+            {(highlight.classes.length > 0 || highlight.region) && (
+              <p className="mt-2 text-xs leading-relaxed text-ink-2">
+                {describeHighlight(highlight, landCover?.classes ?? [])}
+                <button
+                  type="button"
+                  onClick={() => {
+                    // このボタンは押すと消えるので、フォーカスをすぐ下の「重ねる」へ移す
+                    overlayToggleRef.current?.focus();
+                    onClearHighlight();
+                  }}
+                  className="-my-2 ml-1 rounded-md px-2 py-2 font-bold text-survey-ink underline underline-offset-4 hover:bg-paper-2"
+                >
+                  元に戻す
+                </button>
+              </p>
+            )}
             {landCover?.overlayUrl && (
               <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
                 <input
+                  ref={overlayToggleRef}
                   type="checkbox"
                   checked={overlayOn}
                   onChange={(e) => onOverlayChange(e.target.checked)}
@@ -196,34 +199,7 @@ export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetr
 
         {/* 土地被覆 */}
         {landCover && (
-          <section className="mt-6">
-            <h3 className="font-bold">土地被覆の構成</h3>
-            <p className="mt-0.5 text-xs text-ink-2">{landCover.methodLabel}</p>
-            <div className="mt-3 flex h-3 overflow-hidden rounded-sm" role="img" aria-label="土地被覆の構成比">
-              {landCover.classes.map((c) => (
-                <span key={c.key} style={{ width: `${c.ratio * 100}%`, background: c.color }} />
-              ))}
-            </div>
-            <table className="num mt-3 w-full text-sm">
-              <tbody>
-                {landCover.classes.map((c) => (
-                  <tr key={c.key} className="border-b border-rule/60 last:border-0">
-                    <td className="py-1.5">
-                      <span className="mr-2 inline-block size-3 rounded-[2px] align-[-1px]" style={{ background: c.color }} />
-                      {c.label}
-                    </td>
-                    <td className="py-1.5 text-right">{(c.ratio * 100).toFixed(1)}%</td>
-                    <td className="whitespace-nowrap py-1.5 pl-3 text-right text-ink-2">{formatArea(c.areaM2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {landCover.notes.length > 0 && (
-              <ul className="mt-2 space-y-1 text-xs leading-relaxed text-ink-2">
-                {landCover.notes.map((n) => <li key={n}>{n}</li>)}
-              </ul>
-            )}
-          </section>
+          <LandCoverSection landCover={landCover} selected={highlight.classes} onSelectedChange={onClassesChange} />
         )}
 
         {/* AI の所見 */}
@@ -255,6 +231,11 @@ export function ReportPanel({ state, overlayOn, onOverlayChange, onClose, onRetr
               </>
             )}
           </section>
+        )}
+
+        {/* 追加の質問。AI の所見が出たときだけ（AI が使えないときは答えられない） */}
+        {state.status === 'done' && ai && meta && landCover && (
+          <AskSection key={meta.id} analysisId={meta.id} classes={landCover.classes} highlight={highlight} onShow={onShowHighlight} />
         )}
 
         {state.aiUnavailable && (

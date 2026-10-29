@@ -1,6 +1,6 @@
 'use client';
 /**
- * 画面全体。開くといきなり地図（空中写真）が出る。ログインは無い。
+ * 画面全体。開くといきなり地図（空中写真）が出る。
  *
  * - 左端のタブ：場所の検索
  * - 右上：ズーム・コンパス（回転を北に戻す）・現在地
@@ -14,15 +14,19 @@ import {
   NavigationControl,
   ScaleControl,
   setWorkerUrl,
+  type FilterSpecification,
   type GeoJSONSource,
+  type ImageSource,
   type StyleSpecification,
 } from 'maplibre-gl';
 import { type BBox, bboxFromPoints, bboxToPolygon } from '@/lib/geo';
 import { GSI_TILE_URL, IMAGERY_BANDS, IMAGERY_MAX_ZOOM } from '@/lib/imagery';
 import { chooseZoom } from '@/lib/selection';
-import type { Place } from '@/lib/types';
+import { regionBBox } from '@/lib/regions';
+import type { Highlight, LandCoverClass, Place } from '@/lib/types';
 import { useAnalysis } from '@/lib/client/useAnalysis';
 import { useAreaSelect } from '@/lib/client/useAreaSelect';
+import { useClassOverlay } from '@/lib/client/useClassOverlay';
 import { SearchPanel } from '@/components/SearchPanel';
 import { SelectionFrame } from '@/components/SelectionFrame';
 import { SelectBar } from '@/components/SelectBar';
@@ -69,6 +73,12 @@ const LOCALE = {
 
 type Mode = 'idle' | 'selecting' | 'selected' | 'report';
 
+const NO_HIGHLIGHT: Highlight = { classes: [], region: null };
+const NO_CLASSES: LandCoverClass[] = [];
+const EMPTY = { type: 'FeatureCollection' as const, features: [] };
+/** 地図の上の線の色。MapLibre は CSS 変数を読めないので、globals.css の --survey と同じ値を書く */
+const SURVEY = '#d01c80';
+
 /** 横向きのスマホ。結果は下からのシートでなく右に出す（globals.css の land と同じ条件） */
 const LANDSCAPE_PHONE = '(orientation: landscape) and (max-height: 540px) and (max-width: 1023.98px)';
 
@@ -85,6 +95,18 @@ function fitPadding(p: Padding, width: number, height: number): Padding {
     bottom: Math.round(p.bottom * sy),
     left: Math.round(p.left * sx),
     right: Math.round(p.right * sx),
+  };
+}
+
+/** 区画の枠と、範囲のうち区画の外（暗くする部分。区画を穴にした多角形） */
+function focusFeatures(outer: BBox, inner: BBox): GeoJSON.FeatureCollection {
+  const ring = ([w, s, e, n]: BBox) => [[w, s], [e, s], [e, n], [w, n], [w, s]];
+  return {
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', properties: { part: 'mask' }, geometry: { type: 'Polygon', coordinates: [ring(outer), ring(inner).reverse()] } },
+      { type: 'Feature', properties: { part: 'outline' }, geometry: { type: 'Polygon', coordinates: [ring(inner)] } },
+    ],
   };
 }
 
@@ -114,6 +136,8 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
   const [mode, setMode] = useState<Mode>('idle');
   const [bbox, setBbox] = useState<BBox | null>(null);
   const [overlayOn, setOverlayOn] = useState(true);
+  // 写真と地図に示している区分・区画（区分の一覧を押したとき・AI が答えたときに変わる）
+  const [highlight, setHighlight] = useState<Highlight>(NO_HIGHLIGHT);
   const { state: analysis, start, reset } = useAnalysis();
 
   // ---- 地図の用意 ---------------------------------------------------------------
@@ -211,6 +235,7 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
 
   const beginSelect = useCallback(() => {
     reset();
+    setHighlight(NO_HIGHLIGHT);
     setBbox(null);
     setSearchOpen(false);
     setMode('selecting');
@@ -218,6 +243,7 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
 
   const cancelSelect = useCallback(() => {
     reset();
+    setHighlight(NO_HIGHLIGHT);
     setBbox(null);
     setMode('idle');
   }, [reset]);
@@ -230,6 +256,7 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
     if (!wide) setSearchOpen(false);
     setMode('report');
     setOverlayOn(true);
+    setHighlight(NO_HIGHLIGHT);
     void start(bbox);
     // 結果のパネル（PC と横向きのスマホは右、縦向きのスマホは下のシート）に隠れない位置へ、
     // 選んだ範囲を寄せる。余白には、枠の外に付く座標・寸法のラベルと、検索タブ・地図の操作ボタンの分も含める
@@ -252,6 +279,9 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
 
   // ---- 土地被覆を地図に重ねる ----------------------------------------------------------
   const overlayUrl = analysis.landCover?.overlayUrl ?? null;
+  // 区分を選んでいれば、その色だけを残した絵（写真と地図で同じものを使う）
+  const overlaySrc = useClassOverlay(overlayUrl, analysis.landCover?.classes ?? NO_CLASSES, highlight.classes);
+  const filtering = highlight.classes.length > 0;
   useEffect(() => {
     if (!map || !overlayUrl || !analysis.bbox) return;
     const [w, s, e, n] = analysis.bbox;
@@ -260,7 +290,11 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
       url: overlayUrl,
       coordinates: [[w, n], [e, n], [e, s], [w, s]],
     });
-    map.addLayer({ id: 'landcover', type: 'raster', source: 'landcover', paint: { 'raster-opacity': 0.55, 'raster-fade-duration': 0 } });
+    // 区画の枠より下に置く
+    map.addLayer(
+      { id: 'landcover', type: 'raster', source: 'landcover', paint: { 'raster-opacity': 0.55, 'raster-fade-duration': 0 } },
+      map.getLayer('focus-mask') ? 'focus-mask' : undefined,
+    );
     return () => {
       if (map.getLayer('landcover')) map.removeLayer('landcover');
       if (map.getSource('landcover')) map.removeSource('landcover');
@@ -268,13 +302,56 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
   }, [map, overlayUrl, analysis.bbox]);
 
   useEffect(() => {
-    if (map?.getLayer('landcover')) map.setLayoutProperty('landcover', 'visibility', overlayOn ? 'visible' : 'none');
-  }, [map, overlayOn, overlayUrl]);
+    const src = map?.getSource('landcover') as ImageSource | undefined;
+    if (src && overlaySrc && src.url !== overlaySrc) src.updateImage({ url: overlaySrc });
+  }, [map, overlaySrc, overlayUrl]);
+
+  useEffect(() => {
+    if (!map?.getLayer('landcover')) return;
+    map.setLayoutProperty('landcover', 'visibility', overlayOn ? 'visible' : 'none');
+    // 色を絞ったときは、残した色が写真に埋もれないよう濃くする
+    map.setPaintProperty('landcover', 'raster-opacity', filtering ? 0.8 : 0.55);
+  }, [map, overlayOn, overlayUrl, filtering]);
+
+  // AI が答えの中心に挙げた区画を、地図の上で枠で囲み、範囲の残りを暗くする（写真の側と同じ見せ方）
+  useEffect(() => {
+    if (!map) return;
+    const data = highlight.region && analysis.bbox ? focusFeatures(analysis.bbox, regionBBox(analysis.bbox, highlight.region)) : EMPTY;
+    const src = map.getSource('focus') as GeoJSONSource | undefined;
+    if (src) {
+      src.setData(data);
+      return;
+    }
+    map.addSource('focus', { type: 'geojson', data });
+    map.addLayer({
+      id: 'focus-mask', type: 'fill', source: 'focus', filter: ['==', ['get', 'part'], 'mask'],
+      paint: { 'fill-color': '#0d1418', 'fill-opacity': 0.45 },
+    });
+    // 写真の上でも見えるよう、白い縁の上に色の線を引く
+    const outline: FilterSpecification = ['==', ['get', 'part'], 'outline'];
+    map.addLayer({ id: 'focus-halo', type: 'line', source: 'focus', filter: outline, paint: { 'line-color': '#fff', 'line-width': 5, 'line-opacity': 0.85 } });
+    map.addLayer({ id: 'focus-line', type: 'line', source: 'focus', filter: outline, paint: { 'line-color': SURVEY, 'line-width': 2.5 } });
+  }, [map, highlight.region, analysis.bbox]);
+
+  const onClassesChange = useCallback((classes: string[]) => {
+    setHighlight((h) => ({ ...h, classes }));
+    if (classes.length) setOverlayOn(true);
+  }, []);
+  const onShowHighlight = useCallback((h: Highlight) => {
+    setHighlight(h);
+    if (h.classes.length) setOverlayOn(true);
+  }, []);
+  const onClearHighlight = useCallback(() => setHighlight(NO_HIGHLIGHT), []);
+  // 重ね絵を消したら、色の絞り込みもやめる（見えない色を「表示しています」と言わないため）
+  const onOverlayChange = useCallback((on: boolean) => {
+    setOverlayOn(on);
+    if (!on) setHighlight((h) => ({ ...h, classes: [] }));
+  }, []);
 
   // 選んだ範囲を GeoJSON でも持っておく（地図の当たり判定やテストに使う）
   useEffect(() => {
     if (!map) return;
-    const data = bbox ? bboxToPolygon(bbox) : { type: 'FeatureCollection' as const, features: [] };
+    const data = bbox ? bboxToPolygon(bbox) : EMPTY;
     const src = map.getSource('selection') as GeoJSONSource | undefined;
     if (src) src.setData(data);
     else map.addSource('selection', { type: 'geojson', data });
@@ -318,7 +395,12 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
         <ReportPanel
           state={analysis}
           overlayOn={overlayOn}
-          onOverlayChange={setOverlayOn}
+          onOverlayChange={onOverlayChange}
+          overlaySrc={overlaySrc}
+          highlight={highlight}
+          onClassesChange={onClassesChange}
+          onShowHighlight={onShowHighlight}
+          onClearHighlight={onClearHighlight}
           onClose={cancelSelect}
           onRetry={runAnalysis}
           concealOnMobile={searchOpen}

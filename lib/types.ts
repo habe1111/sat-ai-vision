@@ -1,5 +1,6 @@
 /** 画面とサーバーで共有する型 */
 import type { BBox } from '@/lib/geo';
+import type { RegionKey } from '@/lib/regions';
 
 export type Place = {
   id: string;
@@ -61,6 +62,31 @@ export type AnalysisMeta = {
   missingTiles: number;
   credit: string;
 };
+
+/** 追加の質問への答え */
+export type AskAnswer = {
+  text: string;
+  /** 説明に使う土地被覆の区分（LandCoverClass.key）。画面はこの色だけを写真と地図に残す */
+  classes: string[];
+  /** 説明の中心になる区画。特定できないときは null */
+  region: RegionKey | null;
+  /** 答える前に行った追加の解析（画面に「確かめたこと」として出す） */
+  checks: string[];
+  engine: string;
+  seconds: number;
+};
+
+/** 写真と地図に示しているもの：色を残す土地被覆の区分（空なら全部）と、枠で囲む区画 */
+export type Highlight = { classes: string[]; region: RegionKey | null };
+
+/** 前の質問と答え。続けて質問するときに文脈として渡す */
+export type AskTurn = { question: string; answer: string };
+
+/** 質問 API が NDJSON で 1 行ずつ返すイベント */
+export type AskEvent =
+  | { type: 'step'; message: string }
+  | { type: 'answer'; answer: AskAnswer }
+  | { type: 'error'; message: string };
 
 /** 解析 API が NDJSON で 1 行ずつ返すイベント */
 export type AnalysisEvent =

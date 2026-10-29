@@ -20,14 +20,14 @@ export const ANALYSIS_DIR = path.join(process.cwd(), '.cache', 'analyses');
 /** 解析の中身を変えたら上げる（古いキャッシュを使わないため） */
 const PIPELINE_VERSION = 3;
 
-type Saved = { meta: AnalysisMeta; landCover: LandCover; ai: Record<string, AiReport> };
+export type Saved = { meta: AnalysisMeta; landCover: LandCover; ai: Record<string, AiReport> };
 
 export function analysisId(bbox: BBox): string {
   const key = JSON.stringify({ v: PIPELINE_VERSION, bbox: bbox.map((n) => n.toFixed(6)) });
   return createHash('sha256').update(key).digest('hex').slice(0, 20);
 }
 
-async function readSaved(dir: string): Promise<Saved | null> {
+export async function readSaved(dir: string): Promise<Saved | null> {
   try {
     return JSON.parse(await fs.readFile(path.join(dir, 'result.json'), 'utf8')) as Saved;
   } catch {

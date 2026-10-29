@@ -6,7 +6,8 @@
  *   VIEWPORT=mobile / landscape でスマホの縦・横。REQUIRE_AI=1 で AI の所見が出なければ失敗にする
  *
  * 確かめること：地図が出る → 検索して結果を選ぶと URL が移動先を指す → 範囲をドラッグで選ぶ →
- * 解析の結果（写真・土地被覆、AI が使えれば所見）が出る。各段のスクショを OUT_DIR に残す。
+ * 解析の結果（写真・土地被覆、AI が使えれば所見）が出る → 土地被覆の区分を押すとその色だけになる →
+ * AI に質問すると答えが出て、写真と地図に示される。各段のスクショを OUT_DIR に残す。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -113,6 +114,53 @@ try {
     });
     await new Promise((r) => setTimeout(r, 300));
     await shot(page, '7-ai');
+
+    // 解析の流れ：3 段とも終わり、かかった時間が出ている。前の結果を使い回したときだけ「前回の結果」でよい
+    const times = await page.$$eval('section[aria-labelledby="timeline-heading"] li', (lis) => lis.map((li) => li.textContent));
+    const reused = await page.$('xpath/.//aside//p[contains(., "以前に解析した結果")]');
+    const want = reused ? /\d 秒|前回の結果/ : /\d 秒/;
+    // AI を使えないときは 3 段目が「行えず」になるので、時間を見るのは前の 2 段だけ
+    const checked = none ? times.slice(0, 2) : times;
+    if (times.length === 3 && checked.every((t) => want.test(t))) ok(`解析の流れに段ごとの時間が出た（${times.join(' / ')}）`);
+    else fail(`解析の流れの表示が足りない: ${JSON.stringify(times)}`);
+
+    // 土地被覆の区分を押すと、その色だけを残した絵に替わる。「すべての色を表示」で戻る
+    const srcUrl = () => page.evaluate(() => window.__map.getSource('landcover')?.url ?? '');
+    const firstClass = await page.$('section[aria-labelledby="landcover-heading"] button[aria-pressed]');
+    await firstClass.evaluate((b) => b.scrollIntoView({ block: 'center' }));
+    await firstClass.click();
+    await page.waitForFunction(() => window.__map.getSource('landcover')?.url.startsWith('blob:'), { timeout: 10000 });
+    if (await firstClass.evaluate((b) => b.getAttribute('aria-pressed') === 'true')) ok('区分を押すと、その色だけを写真と地図に出した');
+    else fail('押した区分が選ばれた状態にならない');
+    await page.waitForFunction(() => [...document.querySelectorAll('aside img')].every((i) => i.complete && i.naturalWidth > 0));
+    await new Promise((r) => setTimeout(r, 400));
+    await shot(page, '8-class');
+    const all = await page.$('xpath/.//button[contains(., "すべての色を表示")]');
+    await all.click();
+    await page.waitForFunction(() => !window.__map.getSource('landcover')?.url.startsWith('blob:'), { timeout: 5000 });
+    if (!(await srcUrl()).startsWith('blob:')) ok('「すべての色を表示」で元の重ね絵に戻った');
+
+    // AI に質問する（例の質問を押す）。答えと、示す区分・区画が出る
+    if (!none) {
+      const sample = await page.waitForSelector('xpath/.//section[@aria-labelledby="ask-heading"]//button[contains(., "右下")]');
+      await sample.evaluate((b) => b.scrollIntoView({ block: 'center' }));
+      await sample.click();
+      await page.waitForSelector('xpath/.//section[@aria-labelledby="ask-heading"]/ol/li[.//li[contains(., "確かめたこと")] or .//*[@role="alert"]]', { timeout: 300000 });
+      const err = await page.$('section[aria-labelledby="ask-heading"] [role="alert"]');
+      if (err) fail(`質問に答えられなかった：${await err.evaluate((e) => e.textContent)}`);
+      else ok('AI が質問に答えた');
+      const focus = await page.evaluate(async () => (await window.__map.getSource('focus')?.getData())?.features?.length ?? 0);
+      if (focus) ok('答えの区画を地図に枠で示した');
+      else fail('答えの区画が地図に出ていない');
+      await page.evaluate(() => document.querySelector('section[aria-labelledby="ask-heading"] li:last-child')?.scrollIntoView({ block: 'end' }));
+      await page.waitForFunction(() => !window.__map.isMoving() && window.__map.areTilesLoaded(), { timeout: 15000 });
+      await new Promise((r) => setTimeout(r, 500));
+      await shot(page, '9-ask');
+      // 写真（と区画の枠）の位置まで戻してもう 1 枚
+      await page.evaluate(() => document.querySelector('aside figure')?.scrollIntoView({ block: 'start' }));
+      await new Promise((r) => setTimeout(r, 300));
+      await shot(page, '10-ask-photo');
+    }
   }
   if (errors.length) fail(`ブラウザのエラー:\n  ${errors.join('\n  ')}`);
 } catch (e) {
