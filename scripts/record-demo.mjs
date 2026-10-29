@@ -4,7 +4,7 @@
  *   npm run dev && ollama serve   # 別のターミナルで起動しておく
  *   npm run demo                  # BASE_URL・CHROME_PATH・OUT_DIR で上書きできる
  *
- * 流れ：場所を絞り込んで検索 → 解析する範囲を選ぶ → 解析中 → 結果を確かめる。
+ * 流れ：場所を絞り込んで検索 → 解析する範囲を選ぶ → 解析中 → 結果を確かめる → 区分ごとに表示 → AI に質問する。
  * 解析は実際の速さのまま写す。出力は OUT_DIR の demo.mp4 と、README に埋め込む demo.gif（GIF_FPS でコマ数を変えられる）。
  * 同じ範囲の解析結果が残っていると「解析中」が写らないので、前回撮った範囲のキャッシュだけは消してから撮る。
  */
@@ -154,7 +154,7 @@ try {
   await clickText('この範囲を解析');
 
   // ③ 解析中：写真の取得 → 土地被覆 → AI の判読
-  await caption('③ 解析中', '空中写真の取得 → 土地被覆の判定 → AI の判読');
+  await caption('③ 解析中', '写真の取得 → 土地被覆 → AI の判読を、タイムラインで表示');
   await sleep(2500);
   await caption('③ 解析中', '手元のパソコンで処理しています');
   await page.waitForSelector('xpath/.//h3[contains(., "土地被覆の構成")]', { timeout: 300000 });
@@ -183,11 +183,42 @@ try {
   await moveTo(sx, sy);
   await caption('④ AI の所見', '写っているものを、写真の中の位置と確度つきで説明します');
   // 所見を読めるよう、少しずつ送る
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 8; i++) {
     await page.mouse.wheel({ deltaY: 120 });
     await sleep(650);
   }
-  await sleep(2500);
+  await sleep(1500);
+
+  // ⑤ 区分ごとに表示：押した区分の色だけを写真と地図に残す
+  const classRow = (label) => page.waitForSelector(
+    `xpath/.//section[@aria-labelledby="landcover-heading"]//button[@aria-pressed][contains(., "${label}")]`);
+  await page.evaluate(() => document.getElementById('landcover-heading')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  await sleep(900);
+  await caption('⑤ 区分ごとに表示', '押した区分の色だけを、写真と地図に残します');
+  await clickEl(await classRow('建物'));
+  await sleep(2600);
+  await caption('⑤ 区分ごとに表示', '複数選べます（建物＋水域）');
+  await clickEl(await classRow('水域'));
+  await sleep(2600);
+  await caption('⑤ 区分ごとに表示', '「すべての色を表示」で元に戻ります');
+  await sleep(600);
+  await clickText('すべての色を表示');
+  await sleep(1200);
+
+  // ⑥ AI に質問：位置を指すと、その区画を拡大して確かめ、答えと区画を地図に示す
+  await page.evaluate(() => document.getElementById('ask-heading')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  await sleep(900);
+  await caption('⑥ AI に質問する', '解析の結果をもとに答えます');
+  await clickEl(await page.$('#ask-input'));
+  await page.type('#ask-input', '右下には何がありますか？', { delay: 130 });
+  await sleep(500);
+  await page.keyboard.press('Enter');
+  await caption('⑥ AI に質問する', '区画ごとに集計し、右下を拡大して確かめます');
+  await page.waitForSelector('xpath/.//section[@aria-labelledby="ask-heading"]/ol/li[.//li[contains(., "確かめたこと")] or .//*[@role="alert"]]', { timeout: 300000 });
+  await page.waitForFunction(() => !window.__map.isMoving() && window.__map.areTilesLoaded(), { timeout: 20000 });
+  await page.evaluate(() => document.querySelector('section[aria-labelledby="ask-heading"] ol > li:last-child')?.scrollIntoView({ block: 'end', behavior: 'smooth' }));
+  await caption('⑥ 答えを地図に示す', '関係する区分の色と、右下の区画を表示します');
+  await sleep(6000);
   await caption('');
   await sleep(600);
   await recorder.stop();
