@@ -6,7 +6,7 @@
 ![説明動画：「福岡タワー」を検索し、百道浜の範囲を選んで解析し、土地被覆と AI の所見を確かめ、区分ごとの表示と AI への質問を試すまで](docs/media/demo.gif)
 
 ① 場所を絞り込んで検索 → ② 解析する範囲を選ぶ → ③ 解析中 → ④ 結果を確かめる → ⑤ 区分ごとに表示 → ⑥ AI に質問して、答えの区画を地図で確かめる（約 95 秒、実際の速さ）。
-文字まで読める高画質版は [MP4（11 MB）をダウンロード](https://github.com/habe1111/sat-ai-vision/raw/main/docs/media/demo.mp4) して見られます。
+文字まで読める高画質版は [MP4（10 MB）をダウンロード](https://github.com/habe1111/sat-ai-vision/raw/main/docs/media/demo.mp4) して見られます。
 
 <sub>空中写真：国土地理院「全国最新写真（シームレス）」を加工して作成</sub>
 

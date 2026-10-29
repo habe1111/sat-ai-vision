@@ -205,19 +205,19 @@ try {
   await clickText('すべての色を表示');
   await sleep(1200);
 
-  // ⑥ AI に質問：位置を指すと、その区画を拡大して確かめ、答えと区画を地図に示す
+  // ⑥ AI に質問：区画ごとの集計から「どこに多いか」を答え、その区分の色と区画を地図に示す
   await page.evaluate(() => document.getElementById('ask-heading')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
   await sleep(900);
   await caption('⑥ AI に質問する', '解析の結果をもとに答えます');
   await clickEl(await page.$('#ask-input'));
-  await page.type('#ask-input', '右下には何がありますか？', { delay: 130 });
+  await page.type('#ask-input', '駐車場が多い場所はどこですか？', { delay: 130 });
   await sleep(500);
   await page.keyboard.press('Enter');
-  await caption('⑥ AI に質問する', '区画ごとに集計し、右下を拡大して確かめます');
+  await caption('⑥ AI に質問する', '写真を 3×3 の区画に分けて集計し、答えます');
   await page.waitForSelector('xpath/.//section[@aria-labelledby="ask-heading"]/ol/li[.//li[contains(., "確かめたこと")] or .//*[@role="alert"]]', { timeout: 300000 });
   await page.waitForFunction(() => !window.__map.isMoving() && window.__map.areTilesLoaded(), { timeout: 20000 });
   await page.evaluate(() => document.querySelector('section[aria-labelledby="ask-heading"] ol > li:last-child')?.scrollIntoView({ block: 'end', behavior: 'smooth' }));
-  await caption('⑥ 答えを地図に示す', '関係する区分の色と、右下の区画を表示します');
+  await caption('⑥ 答えを地図に示す', '関係する区分の色と、いちばん多い区画を表示します');
   await sleep(6000);
   await caption('');
   await sleep(600);
