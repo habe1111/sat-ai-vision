@@ -45,7 +45,7 @@ export async function writeAtomic(file: string, data: Buffer | string) {
   }
 }
 
-async function fetchTile(z: number, x: number, y: number, signal: AbortSignal): Promise<Buffer | null> {
+export async function fetchTile(z: number, x: number, y: number, signal: AbortSignal): Promise<Buffer | null> {
   const file = path.join(CACHE_DIR, String(z), String(x), `${y}.jpg`);
   try {
     return await fs.readFile(file);

@@ -1,0 +1,17 @@
+[
+  {"id": "hakata-port", "name": "博多港（博多ふ頭）", "focus": "ship", "lon": 130.4007, "lat": 33.6078, "radius": 1},
+  {"id": "yaizu", "name": "焼津漁港", "focus": "ship", "lon": 138.3261, "lat": 34.87, "radius": 1},
+  {"id": "enoshima", "name": "江の島ヨットハーバー", "focus": "ship", "lon": 139.484, "lat": 35.3, "radius": 1},
+  {"id": "yokohama", "name": "横浜港（大さん橋）", "focus": "ship", "lon": 139.6453, "lat": 35.4507, "radius": 1},
+  {"id": "kesennuma", "name": "気仙沼港（内湾）", "focus": "ship", "lon": 141.5783, "lat": 38.905, "radius": 1},
+  {"id": "choshi", "name": "銚子漁港", "focus": "ship", "lon": 140.8383, "lat": 35.7335, "radius": 1},
+  {"id": "sumida", "name": "隅田川（柳橋）", "focus": "ship", "lon": 139.7895, "lat": 35.6965, "radius": 1},
+  {"id": "kobe", "name": "神戸港（中突堤）", "focus": "ship", "lon": 135.1892, "lat": 34.6793, "radius": 1},
+  {"id": "laketown", "name": "越谷レイクタウン", "focus": "car", "lon": 139.8263, "lat": 35.8752, "radius": 1},
+  {"id": "makuhari", "name": "幕張新都心（大型駐車場）", "focus": "car", "lon": 140.0315, "lat": 35.6525, "radius": 1},
+  {"id": "kinjo", "name": "名古屋港（金城ふ頭・完成車の置き場）", "focus": "car", "lon": 136.8464, "lat": 35.0434, "radius": 1},
+  {"id": "ebina", "name": "海老名サービスエリア", "focus": "car", "lon": 139.4019, "lat": 35.4315, "radius": 1},
+  {"id": "tsukuba", "name": "つくば（研究学園・大型商業施設）", "focus": "car", "lon": 140.0836, "lat": 36.0881, "radius": 1},
+  {"id": "shinjuku", "name": "新宿駅西口", "focus": "car", "lon": 139.6986, "lat": 35.691, "radius": 1},
+  {"id": "momochi", "name": "福岡・百道浜", "focus": "car", "lon": 130.3515, "lat": 33.592, "radius": 1}
+]

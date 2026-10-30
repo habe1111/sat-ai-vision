@@ -156,6 +156,13 @@ AI には「答えの文・説明に使う区分・中心になる区画」を�
 車と船は、地理院の写真に自分で注釈を付け、商用でも使えるモデルを学習させる準備を進めています。
 それまでは、台数を聞かれたら「この解像度では 1 台ずつ数えられない」ことを伝え、舗装地や水域の割合と位置で答えます。
 
+### 船・車の注釈
+
+学習に使う正解は、開発用の注釈ページ（`/dev/annotate`、`npm run dev` のときだけ開ける）で付けます。
+港・駐車場など 15 地点の写真を 512 px 四方（約 250 m）のチップ 135 枚に分け、土地被覆と明るさから自動で出した候補を
+人が消す・足す・直す流れです。車は中心の点、船は回転した矩形で付けます。注釈は [data/annotations](data/annotations/) に
+1 チップ 1 ファイルで置き、CC BY 4.0 で公開します（画像は入れず、タイル座標から取り直します）。
+
 ## 動かし方
 
 必要なもの：Node.js 20.12 以上、macOS または Linux。AI の所見を出すには [Ollama](https://ollama.com/)（または Anthropic の API キー）。
@@ -199,6 +206,7 @@ npm run dev &                                  # 別のターミナルでも可
 BASE_URL=http://localhost:3000 npm run e2e     # PC の画面
 BASE_URL=http://localhost:3000 VIEWPORT=mobile npm run e2e   # スマホの画面（指でなぞって範囲を選ぶ）
 BASE_URL=http://localhost:3000 VIEWPORT=landscape npm run e2e  # スマホの横向き
+BASE_URL=http://localhost:3000 npm run annotate:smoke          # 注釈ページ（開発用）。注釈データは変えない
 ```
 
 E2E は headless Chrome で「地図が出る → 検索して結果を選ぶと URL が移動先を指す → 範囲を選ぶ → 土地被覆と AI の所見が出る →
@@ -220,6 +228,7 @@ AI が使えないときは「所見を出せない理由」が出れば通り�
 - 空中写真：[国土地理院](https://maps.gsi.go.jp/development/ichiran.html)「全国最新写真（シームレス）」ほか（地理院タイル）。解析結果の画像はこれを加工して作成しています。
 - 検索：© [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors（[Nominatim](https://nominatim.org/)。[利用ポリシー](https://operations.osmfoundation.org/policies/nominatim/)に従い、毎秒 1 件まで・確定時のみ検索）
 - 土地被覆モデル：IGN [FLAIR-INC](https://huggingface.co/IGNF/FLAIR-INC_rgb_15cl_resnet34-unet)（2024-08-09 更新、[Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/)）を ONNX に変換して使用。変換手順は [tools/flair-export](tools/flair-export/)
+- 船・車の注釈（[data/annotations](data/annotations/)）：[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.ja)。写真は国土地理院「全国最新写真（シームレス）」
 - 建物：[国土地理院最適化ベクトルタイル](https://github.com/gsi-cyberjapan/optimal_bvmap)（PMTiles 版）を加工して作成（[国土地理院コンテンツ利用規約](https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html)、PDL1.0）
 - 判読モデル（既定）：Google [Gemma 4](https://ollama.com/library/gemma4) E4B（[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)）。このリポジトリには含めず、各自が Ollama で取得します
 - このリポジトリのコード：[MIT License](LICENSE)

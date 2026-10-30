@@ -1,0 +1,19 @@
+{
+  "id": "18-229514-104118",
+  "z": 18,
+  "x": 229514,
+  "y": 104118,
+  "site": "kobe",
+  "mpp": 0.491,
+  "reviewed": {
+    "ship": false,
+    "car": false
+  },
+  "updatedAt": "2026-10-30T13:15:56.557Z",
+  "objects": [
+    {"id":"auto-2d98aa-car-0","kind":"car","status":"proposed","source":"auto","x":48.5,"y":262.5},
+    {"id":"auto-2d98aa-car-1","kind":"car","status":"proposed","source":"auto","x":19.5,"y":211.5},
+    {"id":"auto-2d98aa-ship-0","kind":"ship","status":"proposed","source":"auto","cx":23.4,"cy":216.8,"length":163.3,"width":53.4,"angle":1.53},
+    {"id":"auto-2d98aa-ship-1","kind":"ship","status":"proposed","source":"auto","cx":36.3,"cy":159.4,"length":59.8,"width":23.7,"angle":1.02}
+  ]
+}

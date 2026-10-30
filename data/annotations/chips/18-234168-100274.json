@@ -1,0 +1,16 @@
+{
+  "id": "18-234168-100274",
+  "z": 18,
+  "x": 234168,
+  "y": 100274,
+  "site": "kesennuma",
+  "mpp": 0.465,
+  "reviewed": {
+    "ship": false,
+    "car": false
+  },
+  "updatedAt": "2026-10-30T13:17:44.979Z",
+  "objects": [
+    {"id":"auto-50002a-ship-0","kind":"ship","status":"proposed","source":"auto","cx":16.1,"cy":428.2,"length":41.7,"width":21.6,"angle":-0.46}
+  ]
+}

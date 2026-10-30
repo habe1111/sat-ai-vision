@@ -1,0 +1,23 @@
+{
+  "id": "18-230722-103794",
+  "z": 18,
+  "x": 230722,
+  "y": 103794,
+  "site": "kinjo",
+  "mpp": 0.489,
+  "reviewed": {
+    "ship": false,
+    "car": false
+  },
+  "updatedAt": "2026-10-30T13:16:12.402Z",
+  "objects": [
+    {"id":"auto-4246ca-car-0","kind":"car","status":"proposed","source":"auto","x":444.5,"y":159.5},
+    {"id":"auto-4246ca-car-1","kind":"car","status":"proposed","source":"auto","x":487.5,"y":413.5},
+    {"id":"auto-4246ca-car-2","kind":"car","status":"proposed","source":"auto","x":508.5,"y":432.5},
+    {"id":"auto-4246ca-car-3","kind":"car","status":"proposed","source":"auto","x":470.5,"y":183.5},
+    {"id":"auto-4246ca-car-4","kind":"car","status":"proposed","source":"auto","x":257.5,"y":91.5},
+    {"id":"auto-4246ca-car-5","kind":"car","status":"proposed","source":"auto","x":354.5,"y":48.5},
+    {"id":"auto-4246ca-car-6","kind":"car","status":"proposed","source":"auto","x":504.5,"y":418.5},
+    {"id":"auto-4246ca-car-7","kind":"car","status":"proposed","source":"auto","x":458.5,"y":170.5}
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "18-226024-105062",
+  "z": 18,
+  "x": 226024,
+  "y": 105062,
+  "site": "hakata-port",
+  "mpp": 0.497,
+  "reviewed": {
+    "ship": false,
+    "car": false
+  },
+  "updatedAt": "2026-10-30T13:15:14.748Z",
+  "objects": [
+    {"id":"auto-d96ec9-car-0","kind":"car","status":"proposed","source":"auto","x":77.5,"y":463.5},
+    {"id":"auto-d96ec9-car-1","kind":"car","status":"proposed","source":"auto","x":147.5,"y":498.5},
+    {"id":"auto-d96ec9-car-2","kind":"car","status":"proposed","source":"auto","x":59.5,"y":479.5},
+    {"id":"auto-d96ec9-car-3","kind":"car","status":"proposed","source":"auto","x":66.5,"y":472.5},
+    {"id":"auto-d96ec9-car-4","kind":"car","status":"proposed","source":"auto","x":105.5,"y":472.5},
+    {"id":"auto-d96ec9-car-5","kind":"car","status":"proposed","source":"auto","x":61.5,"y":507.5},
+    {"id":"auto-d96ec9-car-6","kind":"car","status":"proposed","source":"auto","x":108.5,"y":495.5},
+    {"id":"auto-d96ec9-car-7","kind":"car","status":"proposed","source":"auto","x":103.5,"y":494.5},
+    {"id":"auto-d96ec9-car-8","kind":"car","status":"proposed","source":"auto","x":65.5,"y":496.5},
+    {"id":"auto-d96ec9-car-9","kind":"car","status":"proposed","source":"auto","x":84.5,"y":468.5},
+    {"id":"auto-d96ec9-car-10","kind":"car","status":"proposed","source":"auto","x":50.5,"y":495.5},
+    {"id":"auto-d96ec9-car-11","kind":"car","status":"proposed","source":"auto","x":93.5,"y":463.5},
+    {"id":"auto-d96ec9-car-12","kind":"car","status":"proposed","source":"auto","x":46.5,"y":500.5},
+    {"id":"auto-d96ec9-car-13","kind":"car","status":"proposed","source":"auto","x":35.5,"y":504.5},
+    {"id":"auto-d96ec9-car-14","kind":"car","status":"proposed","source":"auto","x":57.5,"y":504.5},
+    {"id":"auto-d96ec9-car-15","kind":"car","status":"proposed","source":"auto","x":70.5,"y":499.5},
+    {"id":"auto-d96ec9-car-16","kind":"car","status":"proposed","source":"auto","x":53.5,"y":506.5},
+    {"id":"auto-d96ec9-car-17","kind":"car","status":"proposed","source":"auto","x":95.5,"y":472.5},
+    {"id":"auto-d96ec9-car-18","kind":"car","status":"proposed","source":"auto","x":121.5,"y":492.5},
+    {"id":"auto-d96ec9-car-19","kind":"car","status":"proposed","source":"auto","x":60.5,"y":491.5},
+    {"id":"auto-d96ec9-ship-0","kind":"ship","status":"proposed","source":"auto","cx":323.6,"cy":509.8,"length":31,"width":5.6,"angle":0.04},
+    {"id":"auto-d96ec9-ship-1","kind":"ship","status":"proposed","source":"auto","cx":275.1,"cy":137.1,"length":12.8,"width":7.5,"angle":-0.55},
+    {"id":"auto-d96ec9-ship-2","kind":"ship","status":"proposed","source":"auto","cx":326.7,"cy":18.6,"length":10.8,"width":6.8,"angle":-1.1},
+    {"id":"auto-d96ec9-ship-3","kind":"ship","status":"proposed","source":"auto","cx":267.4,"cy":508.2,"length":9.6,"width":4.8,"angle":-1}
+  ]
+}

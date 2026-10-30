@@ -23,6 +23,8 @@ BASE_URL=http://localhost:3000 npm run e2e                  # PC
 BASE_URL=http://localhost:3000 VIEWPORT=mobile npm run e2e  # スマホ（指でなぞる）。横向きは VIEWPORT=landscape
 REQUIRE_AI=1 BASE_URL=http://localhost:3000 npm run e2e      # AI の所見まで必須にする
 BASE_URL=http://localhost:3000 npm run demo                  # README の説明動画を撮り直す（docs/media/）
+BASE_URL=http://localhost:3000 npm run annotate:prepare      # 注釈のチップと自動の候補を作る（既存の注釈は消さない）
+BASE_URL=http://localhost:3000 npm run annotate:smoke        # 注釈ページの動作確認
 ollama serve                # AI の判読（Ollama）に必要
 ```
 
@@ -40,6 +42,9 @@ ollama serve                # AI の判読（Ollama）に必要
 - 追加の質問は `POST /api/ask`（`lib/server/ask.ts`）。重ね絵から 3×3 区画の集計を足し、位置の語があれば区画を拡大して渡す。
   建物を聞かれたら国土地理院の最適化ベクトルタイル（**PMTiles 版**。{z}/{x}/{y}.pbf 版は 2023-10 で更新停止）から
   棟数と形を出す（`lib/server/buildings.ts`）。車・船は既製のモデルでは数えられない（README の実測）ので、自前で学習する予定。
+- 船・車の注釈は開発用の `/dev/annotate`（API は `app/api/dev/annotate/`）。**next dev のときだけ**動き、本番は 404。
+  注釈は `data/annotations/chips/` に 1 チップ 1 ファイル（Git 管理・CC BY 4.0）。画像は `.cache/annotate/` で Git に入れない。
+  注釈ページは PC 用の開発ツールなので、スマホの画面は確かめていない。
   答えは「文・区分・区画」の構造化出力。**重ね絵は区分ごとの単色・不透明で塗る**前提（区画の集計も、画面の色の絞り込みも画素の色で区分を見分ける）。
 
 ## はまりどころ（実際に踏んだもの）
@@ -51,4 +56,5 @@ ollama serve                # AI の判読（Ollama）に必要
   `searchParams` を読む部分は `<Suspense>` で囲む。
 - E2E のスクショは、画像の読み込みと地図の移動が終わってから撮る（途中だと枠と重ね絵がずれて写る）。
 - **MapLibre の `m.remove()` は URL の `#map=` を消す。** 開発中は React が地図を作り直すので、片付けで hash を戻している（消えると共有リンクが初期位置になる）。
+- 開発中にファイルを足すと、Turbopack が「HMR hash mismatch」でページを読み込み直し続けることがある。`next dev` を起動し直すと直る。
 - MapLibre のズームは 512 px タイル基準。ズーム 16 で約 1 m/px（地理院タイルの z17 相当）。

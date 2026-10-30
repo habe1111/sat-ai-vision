@@ -1,0 +1,19 @@
+{
+  "id": "18-233076-102858",
+  "z": 18,
+  "x": 233076,
+  "y": 102858,
+  "site": "tsukuba",
+  "mpp": 0.483,
+  "reviewed": {
+    "ship": false,
+    "car": false
+  },
+  "updatedAt": "2026-10-30T13:16:25.018Z",
+  "objects": [
+    {"id":"auto-d83f20-car-0","kind":"car","status":"proposed","source":"auto","x":472.5,"y":147.5},
+    {"id":"auto-d83f20-car-1","kind":"car","status":"proposed","source":"auto","x":369.5,"y":9.5},
+    {"id":"auto-d83f20-car-2","kind":"car","status":"proposed","source":"auto","x":433.5,"y":71.5},
+    {"id":"auto-d83f20-car-3","kind":"car","status":"proposed","source":"auto","x":446.5,"y":17.5}
+  ]
+}
