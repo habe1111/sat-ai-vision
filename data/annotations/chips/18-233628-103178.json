@@ -6,10 +6,10 @@
   "site": "choshi",
   "mpp": 0.485,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:44:20.478Z",
+  "updatedAt": "2026-10-30T14:43:14.151Z",
   "objects": [
     {"id":"auto-6cce9d-car-0","status":"proposed","source":"auto","kind":"car","x":400.5,"y":326.5},
     {"id":"auto-6cce9d-car-1","status":"proposed","source":"auto","kind":"car","x":339.5,"y":282.5},
@@ -287,8 +287,8 @@
     {"id":"auto-6cce9d-car-273","status":"proposed","source":"auto","kind":"car","x":251.5,"y":323.5},
     {"id":"auto-6cce9d-car-274","status":"proposed","source":"auto","kind":"car","x":261.5,"y":301.5},
     {"id":"auto-6cce9d-car-275","status":"proposed","source":"auto","kind":"car","x":17.5,"y":477.5},
-    {"id":"claude-mvv0x5a1-0","status":"proposed","source":"claude","kind":"ship","cx":262.5,"cy":152.5,"length":44.92,"width":11,"angle":-1.28},
-    {"id":"claude-mvv0x5a1-1","status":"proposed","source":"claude","kind":"ship","cx":249,"cy":155.5,"length":37.7,"width":10,"angle":-1.19},
-    {"id":"claude-mvv0x5a1-2","status":"proposed","source":"claude","kind":"ship","cx":9,"cy":270,"length":18.44,"width":10,"angle":0.22}
+    {"id":"claude-mvv0x5a1-0","status":"accepted","source":"claude","kind":"ship","cx":262.5,"cy":152.5,"length":44.92,"width":11,"angle":-1.28},
+    {"id":"claude-mvv0x5a1-1","status":"accepted","source":"claude","kind":"ship","cx":249,"cy":155.5,"length":37.7,"width":10,"angle":-1.19},
+    {"id":"claude-mvv0x5a1-2","status":"accepted","source":"claude","kind":"ship","cx":9,"cy":270,"length":18.44,"width":10,"angle":0.22}
   ]
 }

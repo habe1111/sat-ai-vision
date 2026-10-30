@@ -6,10 +6,10 @@
   "site": "choshi",
   "mpp": 0.485,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:44:11.470Z",
+  "updatedAt": "2026-10-30T14:43:04.318Z",
   "objects": [
     {"id":"auto-e38c15-car-0","status":"proposed","source":"auto","kind":"car","x":476.5,"y":375.5},
     {"id":"auto-e38c15-car-1","status":"proposed","source":"auto","kind":"car","x":383.5,"y":500.5},

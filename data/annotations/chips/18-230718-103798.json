@@ -6,10 +6,10 @@
   "site": "kinjo",
   "mpp": 0.489,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:48:26.105Z",
+  "updatedAt": "2026-10-30T14:45:12.770Z",
   "objects": [
     {"id":"auto-3fcbc9-car-0","status":"proposed","source":"auto","kind":"car","x":92.5,"y":416.5},
     {"id":"auto-3fcbc9-car-1","status":"proposed","source":"auto","kind":"car","x":244.5,"y":86.5},

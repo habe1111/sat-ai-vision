@@ -6,10 +6,10 @@
   "site": "yokohama",
   "mpp": 0.486,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:48:10.011Z",
+  "updatedAt": "2026-10-30T14:33:27.839Z",
   "objects": [
     {"id":"auto-556fb5-car-0","status":"proposed","source":"auto","kind":"car","x":289.5,"y":49.5},
     {"id":"auto-556fb5-car-1","status":"proposed","source":"auto","kind":"car","x":455.5,"y":161.5},
@@ -50,6 +50,6 @@
     {"id":"auto-556fb5-car-36","status":"proposed","source":"auto","kind":"car","x":313.5,"y":180.5},
     {"id":"auto-556fb5-car-37","status":"proposed","source":"auto","kind":"car","x":226.5,"y":318.5},
     {"id":"auto-556fb5-car-38","status":"proposed","source":"auto","kind":"car","x":318.5,"y":121.5},
-    {"id":"claude-mvv122dy-0","status":"proposed","source":"claude","kind":"ship","cx":405.5,"cy":62.5,"length":172.54,"width":38,"angle":0.53}
+    {"id":"claude-mvv122dy-0","status":"accepted","source":"claude","kind":"ship","cx":405.5,"cy":62.5,"length":172.54,"width":38,"angle":0.53}
   ]
 }

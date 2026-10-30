@@ -6,10 +6,10 @@
   "site": "hakata-port",
   "mpp": 0.497,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:44:07.607Z",
+  "updatedAt": "2026-10-30T14:18:00.419Z",
   "objects": [
     {"id":"auto-d96ec9-car-0","status":"proposed","source":"auto","kind":"car","x":77.5,"y":463.5},
     {"id":"auto-d96ec9-car-1","status":"proposed","source":"auto","kind":"car","x":147.5,"y":498.5},

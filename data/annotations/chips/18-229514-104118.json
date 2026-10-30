@@ -6,13 +6,13 @@
   "site": "kobe",
   "mpp": 0.491,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:43:52.210Z",
+  "updatedAt": "2026-10-30T14:44:14.418Z",
   "objects": [
     {"id":"auto-2d98aa-car-0","status":"proposed","source":"auto","kind":"car","x":48.5,"y":262.5},
     {"id":"auto-2d98aa-car-1","status":"proposed","source":"auto","kind":"car","x":19.5,"y":211.5},
-    {"id":"claude-mvv0wjgu-0","status":"proposed","source":"claude","kind":"ship","cx":18,"cy":177,"length":68.26,"width":44,"angle":1.02}
+    {"id":"claude-mvv0wjgu-0","status":"accepted","source":"claude","kind":"ship","cx":18,"cy":177,"length":68.26,"width":44,"angle":1.02}
   ]
 }

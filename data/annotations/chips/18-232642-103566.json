@@ -6,10 +6,10 @@
   "site": "enoshima",
   "mpp": 0.487,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:44:47.218Z",
+  "updatedAt": "2026-10-30T14:33:01.755Z",
   "objects": [
     {"id":"auto-afcc93-car-0","status":"proposed","source":"auto","kind":"car","x":117.5,"y":260.5},
     {"id":"auto-afcc93-car-1","status":"proposed","source":"auto","kind":"car","x":91.5,"y":362.5},
@@ -48,6 +48,6 @@
     {"id":"auto-afcc93-car-34","status":"proposed","source":"auto","kind":"car","x":123.5,"y":234.5},
     {"id":"auto-afcc93-car-35","status":"proposed","source":"auto","kind":"car","x":77.5,"y":236.5},
     {"id":"auto-afcc93-car-36","status":"proposed","source":"auto","kind":"car","x":66.5,"y":239.5},
-    {"id":"claude-mvv0xpwu-0","status":"proposed","source":"claude","kind":"ship","cx":250.5,"cy":405.5,"length":49.82,"width":11,"angle":-1.39}
+    {"id":"claude-mvv0xpwu-0","status":"accepted","source":"claude","kind":"ship","cx":250.5,"cy":405.5,"length":49.82,"width":11,"angle":-1.39}
   ]
 }

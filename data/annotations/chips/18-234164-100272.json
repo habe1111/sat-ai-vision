@@ -6,10 +6,10 @@
   "site": "kesennuma",
   "mpp": 0.465,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:42:35.238Z",
+  "updatedAt": "2026-10-30T14:35:01.873Z",
   "objects": [
     {"id":"auto-def87f-car-0","status":"proposed","source":"auto","kind":"car","x":272.5,"y":142.5},
     {"id":"auto-def87f-car-1","status":"proposed","source":"auto","kind":"car","x":258.5,"y":151.5},
@@ -312,8 +312,8 @@
     {"id":"auto-def87f-car-298","status":"proposed","source":"auto","kind":"car","x":57.5,"y":136.5},
     {"id":"auto-def87f-car-299","status":"proposed","source":"auto","kind":"car","x":42.5,"y":261.5},
     {"id":"auto-def87f-car-300","status":"proposed","source":"auto","kind":"car","x":86.5,"y":77.5},
-    {"id":"claude-mvv0uw2i-0","status":"proposed","source":"claude","kind":"ship","cx":159.5,"cy":360.35,"length":20.15,"width":8,"angle":-0.34},
-    {"id":"claude-mvv0uw2i-1","status":"proposed","source":"claude","kind":"ship","cx":162.75,"cy":348.85,"length":21.28,"width":6,"angle":-0.27},
-    {"id":"claude-mvv0uw2i-2","status":"proposed","source":"claude","kind":"ship","cx":120.75,"cy":375.35,"length":15.35,"width":5,"angle":-0.5}
+    {"id":"claude-mvv0uw2i-0","status":"accepted","source":"claude","kind":"ship","cx":159.5,"cy":360.35,"length":20.15,"width":8,"angle":-0.34},
+    {"id":"claude-mvv0uw2i-1","status":"accepted","source":"claude","kind":"ship","cx":162.75,"cy":348.85,"length":21.28,"width":6,"angle":-0.27},
+    {"id":"claude-mvv0uw2i-2","status":"accepted","source":"claude","kind":"ship","cx":120.75,"cy":375.35,"length":15.35,"width":5,"angle":-0.5}
   ]
 }

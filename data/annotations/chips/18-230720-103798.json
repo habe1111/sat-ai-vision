@@ -6,14 +6,14 @@
   "site": "kinjo",
   "mpp": 0.489,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:16:16.156Z",
+  "updatedAt": "2026-10-30T14:45:14.432Z",
   "objects": [
-    {"id":"auto-c7e43e-car-0","kind":"car","status":"proposed","source":"auto","x":495.5,"y":176.5},
-    {"id":"auto-c7e43e-car-1","kind":"car","status":"proposed","source":"auto","x":490.5,"y":199.5},
-    {"id":"auto-c7e43e-car-2","kind":"car","status":"proposed","source":"auto","x":489.5,"y":187.5},
-    {"id":"auto-c7e43e-car-3","kind":"car","status":"proposed","source":"auto","x":391.5,"y":84.5}
+    {"id":"auto-c7e43e-car-0","status":"proposed","source":"auto","kind":"car","x":495.5,"y":176.5},
+    {"id":"auto-c7e43e-car-1","status":"proposed","source":"auto","kind":"car","x":490.5,"y":199.5},
+    {"id":"auto-c7e43e-car-2","status":"proposed","source":"auto","kind":"car","x":489.5,"y":187.5},
+    {"id":"auto-c7e43e-car-3","status":"proposed","source":"auto","kind":"car","x":391.5,"y":84.5}
   ]
 }

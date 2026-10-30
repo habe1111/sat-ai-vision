@@ -6,10 +6,10 @@
   "site": "kinjo",
   "mpp": 0.489,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:47:59.237Z",
+  "updatedAt": "2026-10-30T14:45:10.884Z",
   "objects": [
     {"id":"auto-5a4ff6-car-0","status":"proposed","source":"auto","kind":"car","x":52.5,"y":475.5},
     {"id":"auto-5a4ff6-car-1","status":"proposed","source":"auto","kind":"car","x":17.5,"y":455.5},
@@ -111,7 +111,7 @@
     {"id":"auto-5a4ff6-car-97","status":"proposed","source":"auto","kind":"car","x":102.5,"y":272.5},
     {"id":"auto-5a4ff6-car-98","status":"proposed","source":"auto","kind":"car","x":30.5,"y":282.5},
     {"id":"auto-5a4ff6-car-99","status":"proposed","source":"auto","kind":"car","x":33.5,"y":401.5},
-    {"id":"claude-mvv11u2o-0","status":"proposed","source":"claude","kind":"ship","cx":18,"cy":164.5,"length":62.43,"width":18,"angle":0.96},
-    {"id":"claude-mvv11u2o-1","status":"proposed","source":"claude","kind":"ship","cx":118.5,"cy":314,"length":158.09,"width":22,"angle":0.99}
+    {"id":"claude-mvv11u2o-0","status":"accepted","source":"claude","kind":"ship","cx":18,"cy":164.5,"length":62.43,"width":18,"angle":0.96},
+    {"id":"claude-mvv11u2o-1","status":"accepted","source":"claude","kind":"ship","cx":118.5,"cy":314,"length":158.09,"width":22,"angle":0.99}
   ]
 }

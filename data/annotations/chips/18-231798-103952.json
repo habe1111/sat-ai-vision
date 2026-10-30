@@ -6,10 +6,10 @@
   "site": "yaizu",
   "mpp": 0.49,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:47:27.029Z",
+  "updatedAt": "2026-10-30T14:28:46.585Z",
   "objects": [
     {"id":"auto-585451-car-0","status":"proposed","source":"auto","kind":"car","x":51.5,"y":340.5},
     {"id":"auto-585451-car-1","status":"proposed","source":"auto","kind":"car","x":176.5,"y":256.5},
@@ -204,7 +204,7 @@
     {"id":"auto-585451-car-190","status":"proposed","source":"auto","kind":"car","x":158.5,"y":216.5},
     {"id":"auto-585451-car-191","status":"proposed","source":"auto","kind":"car","x":363.5,"y":89.5},
     {"id":"auto-585451-car-192","status":"proposed","source":"auto","kind":"car","x":170.5,"y":54.5},
-    {"id":"claude-mvv11581-0","status":"proposed","source":"claude","kind":"ship","cx":242,"cy":347.5,"length":133.54,"width":26,"angle":-1.48},
-    {"id":"claude-mvv11581-1","status":"proposed","source":"claude","kind":"ship","cx":215.5,"cy":470.5,"length":83.49,"width":27,"angle":-1.46}
+    {"id":"claude-mvv11581-0","status":"accepted","source":"claude","kind":"ship","cx":242,"cy":347.5,"length":133.54,"width":26,"angle":-1.48},
+    {"id":"claude-mvv11581-1","status":"accepted","source":"claude","kind":"ship","cx":215.5,"cy":470.5,"length":83.49,"width":27,"angle":-1.46}
   ]
 }

@@ -6,10 +6,10 @@
   "site": "yaizu",
   "mpp": 0.49,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:46:55.263Z",
+  "updatedAt": "2026-10-30T14:26:40.104Z",
   "objects": [
     {"id":"auto-4ff166-car-0","status":"proposed","source":"auto","kind":"car","x":188.5,"y":117.5},
     {"id":"auto-4ff166-car-1","status":"proposed","source":"auto","kind":"car","x":498.5,"y":161.5},
@@ -211,15 +211,16 @@
     {"id":"auto-4ff166-car-197","status":"proposed","source":"auto","kind":"car","x":237.5,"y":157.5},
     {"id":"auto-4ff166-car-198","status":"proposed","source":"auto","kind":"car","x":309.5,"y":51.5},
     {"id":"auto-4ff166-car-199","status":"proposed","source":"auto","kind":"car","x":445.5,"y":46.5},
-    {"id":"claude-mvv10gpn-0","status":"proposed","source":"claude","kind":"ship","cx":98.5,"cy":22,"length":28.3,"width":7,"angle":-1.01},
-    {"id":"claude-mvv10gpn-1","status":"proposed","source":"claude","kind":"ship","cx":106.5,"cy":25.5,"length":28.6,"width":7,"angle":-0.93},
-    {"id":"claude-mvv10gpn-2","status":"proposed","source":"claude","kind":"ship","cx":115.5,"cy":26,"length":23.43,"width":6,"angle":-0.88},
-    {"id":"claude-mvv10gpn-3","status":"proposed","source":"claude","kind":"ship","cx":77,"cy":65,"length":36.06,"width":7,"angle":-0.98},
-    {"id":"claude-mvv10gpn-4","status":"proposed","source":"claude","kind":"ship","cx":85,"cy":66.5,"length":30.48,"width":7,"angle":-0.86},
-    {"id":"claude-mvv10gpn-5","status":"proposed","source":"claude","kind":"ship","cx":92,"cy":70.5,"length":30.81,"width":6,"angle":-0.95},
-    {"id":"claude-mvv10gpn-6","status":"proposed","source":"claude","kind":"ship","cx":60,"cy":104.5,"length":32.2,"width":7,"angle":-1.12},
-    {"id":"claude-mvv10gpn-7","status":"proposed","source":"claude","kind":"ship","cx":67.5,"cy":106.5,"length":30.89,"width":6,"angle":-1.06},
-    {"id":"claude-mvv10gpn-8","status":"proposed","source":"claude","kind":"ship","cx":73.5,"cy":111.5,"length":31.91,"width":6,"angle":-1.01},
-    {"id":"claude-mvv10gpn-9","status":"proposed","source":"claude","kind":"ship","cx":42,"cy":456.5,"length":69.26,"width":15,"angle":0.31}
+    {"id":"claude-mvv10gpn-0","status":"accepted","source":"claude","kind":"ship","cx":98.5,"cy":22,"length":28.3,"width":7,"angle":-1.01},
+    {"id":"claude-mvv10gpn-1","status":"accepted","source":"claude","kind":"ship","cx":106.5,"cy":25.5,"length":28.6,"width":7,"angle":-0.93},
+    {"id":"claude-mvv10gpn-2","status":"accepted","source":"claude","kind":"ship","cx":115.5,"cy":26,"length":23.43,"width":6,"angle":-0.88},
+    {"id":"claude-mvv10gpn-3","status":"accepted","source":"claude","kind":"ship","cx":77,"cy":65,"length":36.06,"width":7,"angle":-0.98},
+    {"id":"claude-mvv10gpn-4","status":"accepted","source":"claude","kind":"ship","cx":85,"cy":66.5,"length":30.48,"width":7,"angle":-0.86},
+    {"id":"claude-mvv10gpn-5","status":"accepted","source":"claude","kind":"ship","cx":92,"cy":70.5,"length":30.81,"width":6,"angle":-0.95},
+    {"id":"claude-mvv10gpn-6","status":"accepted","source":"claude","kind":"ship","cx":60,"cy":104.5,"length":32.2,"width":7,"angle":-1.12},
+    {"id":"claude-mvv10gpn-7","status":"accepted","source":"claude","kind":"ship","cx":67.5,"cy":106.5,"length":30.89,"width":6,"angle":-1.06},
+    {"id":"claude-mvv10gpn-8","status":"accepted","source":"claude","kind":"ship","cx":73.5,"cy":111.5,"length":31.91,"width":6,"angle":-1.01},
+    {"id":"claude-mvv10gpn-9","status":"accepted","source":"claude","kind":"ship","cx":42,"cy":456.5,"length":69.26,"width":15,"angle":0.31},
+    {"id":"h-mvv2ck8r-5","status":"accepted","source":"human","kind":"ship","cx":160.32,"cy":118.7,"length":21.51,"width":14.23,"angle":-0.68}
   ]
 }

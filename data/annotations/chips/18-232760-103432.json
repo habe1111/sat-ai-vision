@@ -6,10 +6,10 @@
   "site": "yokohama",
   "mpp": 0.486,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:47:37.451Z",
+  "updatedAt": "2026-10-30T14:33:42.837Z",
   "objects": [
     {"id":"auto-bf25d3-car-0","status":"proposed","source":"auto","kind":"car","x":79.5,"y":220.5},
     {"id":"auto-bf25d3-car-1","status":"proposed","source":"auto","kind":"car","x":12.5,"y":6.5},

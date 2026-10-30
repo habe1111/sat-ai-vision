@@ -6,10 +6,10 @@
   "site": "enoshima",
   "mpp": 0.487,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:44:47.325Z",
+  "updatedAt": "2026-10-30T14:33:10.039Z",
   "objects": [
     {"id":"auto-caf92e-car-0","status":"proposed","source":"auto","kind":"car","x":79.5,"y":179.5},
     {"id":"auto-caf92e-car-1","status":"proposed","source":"auto","kind":"car","x":281.5,"y":163.5},

@@ -6,10 +6,10 @@
   "site": "kinjo",
   "mpp": 0.489,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:48:19.135Z",
+  "updatedAt": "2026-10-30T14:45:19.900Z",
   "objects": [
     {"id":"auto-ee38ee-car-0","status":"proposed","source":"auto","kind":"car","x":235.5,"y":160.5},
     {"id":"auto-ee38ee-car-1","status":"proposed","source":"auto","kind":"car","x":185.5,"y":154.5},
@@ -84,8 +84,8 @@
     {"id":"auto-ee38ee-car-70","status":"proposed","source":"auto","kind":"car","x":136.5,"y":267.5},
     {"id":"auto-ee38ee-car-71","status":"proposed","source":"auto","kind":"car","x":81.5,"y":24.5},
     {"id":"auto-ee38ee-car-72","status":"proposed","source":"auto","kind":"car","x":73.5,"y":4.5},
-    {"id":"auto-ee38ee-ship-1","status":"proposed","source":"auto","kind":"ship","cx":293.3,"cy":303.2,"length":73.3,"width":34.3,"angle":-0.6},
-    {"id":"auto-ee38ee-ship-2","status":"proposed","source":"auto","kind":"ship","cx":287.9,"cy":335,"length":21,"width":15.3,"angle":-0.7},
-    {"id":"auto-ee38ee-ship-3","status":"proposed","source":"auto","kind":"ship","cx":333.3,"cy":318.8,"length":20.1,"width":4.9,"angle":0.98}
+    {"id":"auto-ee38ee-ship-1","status":"accepted","source":"auto","kind":"ship","cx":293.3,"cy":303.2,"length":73.3,"width":34.3,"angle":-0.6},
+    {"id":"auto-ee38ee-ship-2","status":"accepted","source":"auto","kind":"ship","cx":287.9,"cy":335,"length":21,"width":15.3,"angle":-0.7},
+    {"id":"auto-ee38ee-ship-3","status":"accepted","source":"auto","kind":"ship","cx":333.3,"cy":318.8,"length":20.1,"width":4.9,"angle":0.98}
   ]
 }

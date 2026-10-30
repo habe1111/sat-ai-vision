@@ -6,16 +6,16 @@
   "site": "kesennuma",
   "mpp": 0.465,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:45:23.067Z",
+  "updatedAt": "2026-10-30T14:39:45.217Z",
   "objects": [
-    {"id":"claude-mvv0yhkm-0","status":"proposed","source":"claude","kind":"ship","cx":25,"cy":61.5,"length":52.81,"width":14,"angle":0.33},
-    {"id":"claude-mvv0yhkm-1","status":"proposed","source":"claude","kind":"ship","cx":24,"cy":89.75,"length":50.44,"width":13,"angle":0.31},
-    {"id":"claude-mvv0yhkm-2","status":"proposed","source":"claude","kind":"ship","cx":19.5,"cy":116.5,"length":40.02,"width":13,"angle":0.23},
-    {"id":"claude-mvv0yhkm-3","status":"proposed","source":"claude","kind":"ship","cx":13.75,"cy":149,"length":29.26,"width":12,"angle":0.35},
-    {"id":"claude-mvv0yhkm-4","status":"proposed","source":"claude","kind":"ship","cx":10,"cy":168.5,"length":21.19,"width":11,"angle":0.34},
-    {"id":"claude-mvv0yhkm-5","status":"proposed","source":"claude","kind":"ship","cx":8.5,"cy":201,"length":18.79,"width":11,"angle":0.44}
+    {"id":"claude-mvv0yhkm-0","status":"accepted","source":"claude","kind":"ship","cx":24.86,"cy":63.46,"length":52.81,"width":19.68,"angle":0.33},
+    {"id":"claude-mvv0yhkm-1","status":"accepted","source":"claude","kind":"ship","cx":22.96,"cy":92.11,"length":50.44,"width":18.16,"angle":0.31},
+    {"id":"claude-mvv0yhkm-2","status":"accepted","source":"claude","kind":"ship","cx":18.88,"cy":116.96,"length":39.05,"width":17.02,"angle":0.26},
+    {"id":"claude-mvv0yhkm-3","status":"accepted","source":"claude","kind":"ship","cx":12.99,"cy":150.55,"length":29.26,"width":18.66,"angle":0.35},
+    {"id":"claude-mvv0yhkm-4","status":"accepted","source":"claude","kind":"ship","cx":9.51,"cy":173.44,"length":21.19,"width":16.45,"angle":0.34},
+    {"id":"claude-mvv0yhkm-5","status":"accepted","source":"claude","kind":"ship","cx":7.38,"cy":203.99,"length":18.79,"width":18.79,"angle":0.44}
   ]
 }

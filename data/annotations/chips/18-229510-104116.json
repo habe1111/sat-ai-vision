@@ -6,10 +6,10 @@
   "site": "kobe",
   "mpp": 0.491,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:43:18.132Z",
+  "updatedAt": "2026-10-30T14:43:55.584Z",
   "objects": [
     {"id":"auto-a76e75-car-0","status":"proposed","source":"auto","kind":"car","x":166.5,"y":6.5},
     {"id":"auto-a76e75-car-1","status":"proposed","source":"auto","kind":"car","x":140.5,"y":291.5},
@@ -137,8 +137,8 @@
     {"id":"auto-a76e75-car-123","status":"proposed","source":"auto","kind":"car","x":50.5,"y":345.5},
     {"id":"auto-a76e75-car-124","status":"proposed","source":"auto","kind":"car","x":309.5,"y":54.5},
     {"id":"auto-a76e75-car-125","status":"proposed","source":"auto","kind":"car","x":7.5,"y":217.5},
-    {"id":"claude-mvv0vt68-0","status":"proposed","source":"claude","kind":"ship","cx":227,"cy":222.5,"length":102.79,"width":16,"angle":1.23},
-    {"id":"claude-mvv0vt68-1","status":"proposed","source":"claude","kind":"ship","cx":266,"cy":204,"length":101.84,"width":30,"angle":1.23},
-    {"id":"claude-mvv0vt68-2","status":"proposed","source":"claude","kind":"ship","cx":370.5,"cy":165,"length":87.32,"width":32,"angle":1.16}
+    {"id":"claude-mvv0vt68-0","status":"accepted","source":"claude","kind":"ship","cx":227,"cy":222.5,"length":102.79,"width":16,"angle":1.23},
+    {"id":"claude-mvv0vt68-1","status":"accepted","source":"claude","kind":"ship","cx":266,"cy":204,"length":101.84,"width":30,"angle":1.23},
+    {"id":"claude-mvv0vt68-2","status":"accepted","source":"claude","kind":"ship","cx":370.5,"cy":165,"length":87.32,"width":32,"angle":1.16}
   ]
 }

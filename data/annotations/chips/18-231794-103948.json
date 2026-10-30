@@ -6,10 +6,10 @@
   "site": "yaizu",
   "mpp": 0.49,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:42:47.920Z",
+  "updatedAt": "2026-10-30T14:20:20.171Z",
   "objects": [
     {"id":"auto-1e2f25-car-0","status":"proposed","source":"auto","kind":"car","x":167.5,"y":494.5},
     {"id":"auto-1e2f25-car-1","status":"proposed","source":"auto","kind":"car","x":438.5,"y":8.5},

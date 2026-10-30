@@ -6,10 +6,10 @@
   "site": "hakata-port",
   "mpp": 0.497,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:44:07.945Z",
+  "updatedAt": "2026-10-30T14:17:47.553Z",
   "objects": [
     {"id":"auto-c3dd3c-car-0","status":"proposed","source":"auto","kind":"car","x":119.5,"y":495.5},
     {"id":"auto-c3dd3c-car-1","status":"proposed","source":"auto","kind":"car","x":476.5,"y":85.5},
@@ -61,7 +61,7 @@
     {"id":"auto-c3dd3c-car-47","status":"proposed","source":"auto","kind":"car","x":416.5,"y":130.5},
     {"id":"auto-c3dd3c-car-48","status":"proposed","source":"auto","kind":"car","x":74.5,"y":461.5},
     {"id":"auto-c3dd3c-car-49","status":"proposed","source":"auto","kind":"car","x":477.5,"y":127.5},
-    {"id":"claude-mvv0wvlu-0","status":"proposed","source":"claude","kind":"ship","cx":367.5,"cy":131.5,"length":150.21,"width":15,"angle":0.63},
-    {"id":"claude-mvv0wvlu-1","status":"proposed","source":"claude","kind":"ship","cx":181,"cy":499.5,"length":43.83,"width":15,"angle":0.61}
+    {"id":"claude-mvv0wvlu-0","status":"accepted","source":"claude","kind":"ship","cx":367.1,"cy":129.02,"length":151.28,"width":15,"angle":0.62},
+    {"id":"claude-mvv0wvlu-1","status":"accepted","source":"claude","kind":"ship","cx":181,"cy":499.5,"length":43.83,"width":15,"angle":0.61}
   ]
 }

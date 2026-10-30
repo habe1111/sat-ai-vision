@@ -6,10 +6,10 @@
   "site": "momochi",
   "mpp": 0.497,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:46:57.938Z",
+  "updatedAt": "2026-10-30T14:45:53.401Z",
   "objects": [
     {"id":"auto-0e351c-car-0","status":"proposed","source":"auto","kind":"car","x":441.5,"y":424.5},
     {"id":"auto-0e351c-car-1","status":"proposed","source":"auto","kind":"car","x":433.5,"y":437.5},

@@ -6,10 +6,10 @@
   "site": "ebina",
   "mpp": 0.487,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:48:33.377Z",
+  "updatedAt": "2026-10-30T14:45:25.452Z",
   "objects": [
     {"id":"auto-ee3d8b-car-0","status":"proposed","source":"auto","kind":"car","x":224.5,"y":461.5},
     {"id":"auto-ee3d8b-car-1","status":"proposed","source":"auto","kind":"car","x":231.5,"y":475.5},

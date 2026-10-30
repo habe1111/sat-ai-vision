@@ -6,10 +6,10 @@
   "site": "sumida",
   "mpp": 0.485,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:43:30.986Z",
+  "updatedAt": "2026-10-30T14:43:45.519Z",
   "objects": [
     {"id":"auto-b609b1-car-0","status":"proposed","source":"auto","kind":"car","x":152.5,"y":190.5},
     {"id":"auto-b609b1-car-1","status":"proposed","source":"auto","kind":"car","x":94.5,"y":123.5},
@@ -411,6 +411,6 @@
     {"id":"auto-b609b1-car-397","status":"proposed","source":"auto","kind":"car","x":180.5,"y":401.5},
     {"id":"auto-b609b1-car-398","status":"proposed","source":"auto","kind":"car","x":40.5,"y":410.5},
     {"id":"auto-b609b1-car-399","status":"proposed","source":"auto","kind":"car","x":79.5,"y":223.5},
-    {"id":"auto-b609b1-ship-1","status":"proposed","source":"auto","kind":"ship","cx":241.5,"cy":481.1,"length":17.1,"width":7.8,"angle":-1.38}
+    {"id":"auto-b609b1-ship-1","status":"accepted","source":"auto","kind":"ship","cx":241.5,"cy":481.1,"length":17.1,"width":7.8,"angle":-1.38}
   ]
 }

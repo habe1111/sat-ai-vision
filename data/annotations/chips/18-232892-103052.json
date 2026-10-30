@@ -6,10 +6,10 @@
   "site": "laketown",
   "mpp": 0.484,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:48:52.955Z",
+  "updatedAt": "2026-10-30T14:44:35.901Z",
   "objects": [
     {"id":"auto-639fcc-car-0","status":"proposed","source":"auto","kind":"car","x":278.5,"y":13.5},
     {"id":"auto-639fcc-car-1","status":"proposed","source":"auto","kind":"car","x":120.5,"y":103.5},

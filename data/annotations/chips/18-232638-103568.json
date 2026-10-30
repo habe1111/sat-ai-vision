@@ -6,10 +6,10 @@
   "site": "enoshima",
   "mpp": 0.487,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:44:46.769Z",
+  "updatedAt": "2026-10-30T14:33:05.571Z",
   "objects": [
     {"id":"auto-65641f-car-0","status":"proposed","source":"auto","kind":"car","x":307.5,"y":378.5},
     {"id":"auto-65641f-car-1","status":"proposed","source":"auto","kind":"car","x":295.5,"y":383.5},

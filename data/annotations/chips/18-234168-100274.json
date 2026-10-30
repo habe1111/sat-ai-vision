@@ -6,11 +6,11 @@
   "site": "kesennuma",
   "mpp": 0.465,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:45:35.203Z",
+  "updatedAt": "2026-10-30T14:36:44.204Z",
   "objects": [
-    {"id":"claude-mvv0yqxr-0","status":"proposed","source":"claude","kind":"ship","cx":18.75,"cy":428,"length":38.81,"width":13,"angle":-0.26}
+    {"id":"claude-mvv0yqxr-0","status":"accepted","source":"claude","kind":"ship","cx":18.75,"cy":428,"length":38.81,"width":13,"angle":-0.26}
   ]
 }

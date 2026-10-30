@@ -6,10 +6,10 @@
   "site": "yokohama",
   "mpp": 0.486,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:47:37.671Z",
+  "updatedAt": "2026-10-30T14:34:56.752Z",
   "objects": [
     {"id":"auto-e9908b-car-0","status":"proposed","source":"auto","kind":"car","x":129.5,"y":464.5},
     {"id":"auto-e9908b-car-1","status":"proposed","source":"auto","kind":"car","x":400.5,"y":155.5},
@@ -31,9 +31,9 @@
     {"id":"auto-e9908b-car-17","status":"proposed","source":"auto","kind":"car","x":445.5,"y":121.5},
     {"id":"auto-e9908b-car-18","status":"proposed","source":"auto","kind":"car","x":451.5,"y":15.5},
     {"id":"auto-e9908b-car-19","status":"proposed","source":"auto","kind":"car","x":465.5,"y":37.5},
-    {"id":"claude-mvv11dfn-0","status":"proposed","source":"claude","kind":"ship","cx":4,"cy":48.35,"length":15.01,"width":10,"angle":-1.01},
-    {"id":"claude-mvv11dfn-1","status":"proposed","source":"claude","kind":"ship","cx":5.5,"cy":66.45,"length":24.33,"width":9,"angle":-1.1},
-    {"id":"claude-mvv11dfn-2","status":"proposed","source":"claude","kind":"ship","cx":5.7,"cy":90.15,"length":22.93,"width":8,"angle":-1.05},
-    {"id":"claude-mvv11dfn-3","status":"proposed","source":"claude","kind":"ship","cx":13.1,"cy":96,"length":30.94,"width":9,"angle":-1.03}
+    {"id":"claude-mvv11dfn-0","status":"accepted","source":"claude","kind":"ship","cx":4,"cy":48.35,"length":15.01,"width":10,"angle":-1.01},
+    {"id":"claude-mvv11dfn-1","status":"accepted","source":"claude","kind":"ship","cx":5.5,"cy":66.45,"length":24.33,"width":9,"angle":-1.1},
+    {"id":"claude-mvv11dfn-2","status":"accepted","source":"claude","kind":"ship","cx":5.7,"cy":90.15,"length":22.93,"width":8,"angle":-1.05},
+    {"id":"claude-mvv11dfn-3","status":"accepted","source":"claude","kind":"ship","cx":13.1,"cy":96,"length":30.94,"width":9,"angle":-1.03}
   ]
 }

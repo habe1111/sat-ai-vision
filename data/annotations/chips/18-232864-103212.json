@@ -6,10 +6,10 @@
   "site": "sumida",
   "mpp": 0.485,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:43:52.830Z",
+  "updatedAt": "2026-10-30T14:43:47.847Z",
   "objects": [
     {"id":"auto-4673bd-car-0","status":"proposed","source":"auto","kind":"car","x":289.5,"y":408.5},
     {"id":"auto-4673bd-car-1","status":"proposed","source":"auto","kind":"car","x":284.5,"y":442.5},

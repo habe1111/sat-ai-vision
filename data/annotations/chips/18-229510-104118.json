@@ -6,10 +6,10 @@
   "site": "kobe",
   "mpp": 0.491,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:43:18.266Z",
+  "updatedAt": "2026-10-30T14:44:06.768Z",
   "objects": [
     {"id":"auto-053b50-car-0","status":"proposed","source":"auto","kind":"car","x":209.5,"y":422.5},
     {"id":"auto-053b50-car-1","status":"proposed","source":"auto","kind":"car","x":202.5,"y":197.5},

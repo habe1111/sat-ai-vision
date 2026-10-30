@@ -6,10 +6,10 @@
   "site": "momochi",
   "mpp": 0.497,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:46:36.698Z",
+  "updatedAt": "2026-10-30T14:46:02.253Z",
   "objects": [
     {"id":"auto-e0788d-car-0","status":"proposed","source":"auto","kind":"car","x":110.5,"y":398.5},
     {"id":"auto-e0788d-car-1","status":"proposed","source":"auto","kind":"car","x":224.5,"y":492.5},
@@ -194,7 +194,7 @@
     {"id":"auto-e0788d-car-180","status":"proposed","source":"auto","kind":"car","x":194.5,"y":446.5},
     {"id":"auto-e0788d-car-181","status":"proposed","source":"auto","kind":"car","x":314.5,"y":480.5},
     {"id":"auto-e0788d-car-182","status":"proposed","source":"auto","kind":"car","x":93.5,"y":347.5},
-    {"id":"auto-e0788d-ship-2","status":"proposed","source":"auto","kind":"ship","cx":121,"cy":92.9,"length":32.1,"width":10.4,"angle":-0.02},
-    {"id":"auto-e0788d-ship-5","status":"proposed","source":"auto","kind":"ship","cx":162.3,"cy":60.9,"length":13.5,"width":6,"angle":-0.98}
+    {"id":"auto-e0788d-ship-2","status":"accepted","source":"auto","kind":"ship","cx":121,"cy":92.9,"length":32.1,"width":10.4,"angle":-0.02},
+    {"id":"auto-e0788d-ship-5","status":"accepted","source":"auto","kind":"ship","cx":162.3,"cy":60.9,"length":13.5,"width":6,"angle":-0.98}
   ]
 }

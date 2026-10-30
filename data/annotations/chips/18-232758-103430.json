@@ -6,10 +6,10 @@
   "site": "yokohama",
   "mpp": 0.486,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:47:36.595Z",
+  "updatedAt": "2026-10-30T14:33:16.504Z",
   "objects": [
     {"id":"auto-773ecc-car-0","status":"proposed","source":"auto","kind":"car","x":46.5,"y":438.5},
     {"id":"auto-773ecc-car-1","status":"proposed","source":"auto","kind":"car","x":53.5,"y":437.5},
@@ -27,7 +27,7 @@
     {"id":"auto-773ecc-car-13","status":"proposed","source":"auto","kind":"car","x":294.5,"y":347.5},
     {"id":"auto-773ecc-car-14","status":"proposed","source":"auto","kind":"car","x":372.5,"y":45.5},
     {"id":"auto-773ecc-car-15","status":"proposed","source":"auto","kind":"car","x":346.5,"y":453.5},
-    {"id":"claude-mvv11clr-0","status":"proposed","source":"claude","kind":"ship","cx":122.2,"cy":356.65,"length":48.62,"width":9,"angle":-1.03},
-    {"id":"claude-mvv11clr-1","status":"proposed","source":"claude","kind":"ship","cx":64.7,"cy":387.5,"length":40.31,"width":9,"angle":-1.05}
+    {"id":"claude-mvv11clr-0","status":"accepted","source":"claude","kind":"ship","cx":122.2,"cy":356.65,"length":48.62,"width":9,"angle":-1.03},
+    {"id":"claude-mvv11clr-1","status":"accepted","source":"claude","kind":"ship","cx":64.7,"cy":387.5,"length":40.31,"width":9,"angle":-1.05}
   ]
 }

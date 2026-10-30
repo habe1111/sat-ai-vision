@@ -6,10 +6,10 @@
   "site": "choshi",
   "mpp": 0.485,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:43:39.891Z",
+  "updatedAt": "2026-10-30T14:43:02.103Z",
   "objects": [
     {"id":"auto-c81b02-car-0","status":"proposed","source":"auto","kind":"car","x":271.5,"y":263.5},
     {"id":"auto-c81b02-car-1","status":"proposed","source":"auto","kind":"car","x":298.5,"y":251.5},
@@ -103,11 +103,11 @@
     {"id":"auto-c81b02-car-89","status":"proposed","source":"auto","kind":"car","x":453.5,"y":224.5},
     {"id":"auto-c81b02-car-90","status":"proposed","source":"auto","kind":"car","x":198.5,"y":284.5},
     {"id":"auto-c81b02-car-91","status":"proposed","source":"auto","kind":"car","x":151.5,"y":346.5},
-    {"id":"claude-mvv0w9yn-0","status":"proposed","source":"claude","kind":"ship","cx":10,"cy":333,"length":20,"width":10,"angle":0},
-    {"id":"claude-mvv0w9yn-1","status":"proposed","source":"claude","kind":"ship","cx":68,"cy":342,"length":46.69,"width":11,"angle":0.17},
-    {"id":"claude-mvv0w9yn-2","status":"proposed","source":"claude","kind":"ship","cx":197,"cy":364,"length":82.87,"width":15,"angle":0.15},
-    {"id":"claude-mvv0w9yn-3","status":"proposed","source":"claude","kind":"ship","cx":290.5,"cy":365,"length":31,"width":7,"angle":0},
-    {"id":"claude-mvv0w9yn-4","status":"proposed","source":"claude","kind":"ship","cx":291,"cy":375,"length":38.05,"width":9,"angle":-0.05},
-    {"id":"claude-mvv0w9yn-5","status":"proposed","source":"claude","kind":"ship","cx":364.5,"cy":351.5,"length":54.13,"width":12,"angle":-0.2}
+    {"id":"claude-mvv0w9yn-0","status":"accepted","source":"claude","kind":"ship","cx":10,"cy":333,"length":20,"width":10,"angle":0},
+    {"id":"claude-mvv0w9yn-1","status":"accepted","source":"claude","kind":"ship","cx":68,"cy":342,"length":46.69,"width":11,"angle":0.17},
+    {"id":"claude-mvv0w9yn-2","status":"accepted","source":"claude","kind":"ship","cx":197,"cy":364,"length":82.87,"width":15,"angle":0.15},
+    {"id":"claude-mvv0w9yn-3","status":"accepted","source":"claude","kind":"ship","cx":290.5,"cy":365,"length":31,"width":7,"angle":0},
+    {"id":"claude-mvv0w9yn-4","status":"accepted","source":"claude","kind":"ship","cx":291,"cy":375,"length":38.05,"width":9,"angle":-0.05},
+    {"id":"claude-mvv0w9yn-5","status":"accepted","source":"claude","kind":"ship","cx":364.5,"cy":351.5,"length":54.13,"width":12,"angle":-0.2}
   ]
 }

@@ -6,10 +6,10 @@
   "site": "enoshima",
   "mpp": 0.487,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:44:46.884Z",
+  "updatedAt": "2026-10-30T14:28:53.235Z",
   "objects": [
     {"id":"auto-60e150-car-0","status":"proposed","source":"auto","kind":"car","x":21.5,"y":197.5},
     {"id":"auto-60e150-car-1","status":"proposed","source":"auto","kind":"car","x":211.5,"y":506.5},
@@ -113,7 +113,7 @@
     {"id":"auto-60e150-car-99","status":"proposed","source":"auto","kind":"car","x":22.5,"y":470.5},
     {"id":"auto-60e150-car-100","status":"proposed","source":"auto","kind":"car","x":4.5,"y":418.5},
     {"id":"auto-60e150-car-101","status":"proposed","source":"auto","kind":"car","x":66.5,"y":499.5},
-    {"id":"auto-60e150-ship-2","status":"proposed","source":"auto","kind":"ship","cx":287.1,"cy":480.9,"length":39.3,"width":11.3,"angle":-1},
-    {"id":"auto-60e150-ship-7","status":"proposed","source":"auto","kind":"ship","cx":224.5,"cy":426.5,"length":19.8,"width":6.7,"angle":-0.91}
+    {"id":"auto-60e150-ship-2","status":"accepted","source":"auto","kind":"ship","cx":287.1,"cy":480.9,"length":39.3,"width":11.3,"angle":-1},
+    {"id":"auto-60e150-ship-7","status":"accepted","source":"auto","kind":"ship","cx":224.5,"cy":426.5,"length":19.8,"width":6.7,"angle":-0.91}
   ]
 }

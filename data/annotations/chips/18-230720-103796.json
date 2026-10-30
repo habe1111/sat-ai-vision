@@ -6,10 +6,10 @@
   "site": "kinjo",
   "mpp": 0.489,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:47:43.222Z",
+  "updatedAt": "2026-10-30T14:45:08.603Z",
   "objects": [
     {"id":"auto-9900cf-car-0","status":"proposed","source":"auto","kind":"car","x":31.5,"y":192.5},
     {"id":"auto-9900cf-car-1","status":"proposed","source":"auto","kind":"car","x":204.5,"y":126.5},
@@ -155,9 +155,9 @@
     {"id":"auto-9900cf-car-141","status":"proposed","source":"auto","kind":"car","x":90.5,"y":287.5},
     {"id":"auto-9900cf-car-142","status":"proposed","source":"auto","kind":"car","x":385.5,"y":51.5},
     {"id":"auto-9900cf-car-143","status":"proposed","source":"auto","kind":"car","x":99.5,"y":112.5},
-    {"id":"claude-mvv11hpu-0","status":"proposed","source":"claude","kind":"ship","cx":111.5,"cy":305,"length":89.87,"width":25,"angle":0.82},
-    {"id":"claude-mvv11hpu-1","status":"proposed","source":"claude","kind":"ship","cx":112,"cy":343,"length":24.08,"width":10,"angle":0.84},
-    {"id":"claude-mvv11hpu-2","status":"proposed","source":"claude","kind":"ship","cx":40.5,"cy":197.5,"length":22.67,"width":8,"angle":0.85},
-    {"id":"claude-mvv11hpu-3","status":"proposed","source":"claude","kind":"ship","cx":491,"cy":109,"length":65.3,"width":20,"angle":0.87}
+    {"id":"claude-mvv11hpu-0","status":"accepted","source":"claude","kind":"ship","cx":111.5,"cy":305,"length":89.87,"width":25,"angle":0.82},
+    {"id":"claude-mvv11hpu-1","status":"accepted","source":"claude","kind":"ship","cx":112,"cy":343,"length":24.08,"width":10,"angle":0.84},
+    {"id":"claude-mvv11hpu-2","status":"accepted","source":"claude","kind":"ship","cx":40.5,"cy":197.5,"length":22.67,"width":8,"angle":0.85},
+    {"id":"claude-mvv11hpu-3","status":"accepted","source":"claude","kind":"ship","cx":491,"cy":109,"length":65.3,"width":20,"angle":0.87}
   ]
 }

@@ -6,9 +6,9 @@
   "site": "kobe",
   "mpp": 0.491,
   "reviewed": {
-    "ship": false,
+    "ship": true,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:15:58.444Z",
+  "updatedAt": "2026-10-30T14:44:29.435Z",
   "objects": []
 }
