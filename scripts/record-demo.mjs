@@ -219,6 +219,28 @@ try {
   await page.evaluate(() => document.querySelector('section[aria-labelledby="ask-heading"] ol > li:last-child')?.scrollIntoView({ block: 'end', behavior: 'smooth' }));
   await caption('⑥ 答えを地図に示す', '関係する区分の色と、いちばん多い区画を表示します');
   await sleep(6000);
+
+  // ⑦ 建物の数と形：国土地理院の地図データから棟数を数え、形を地図に描く
+  const answers = () => page.$$eval('section[aria-labelledby="ask-heading"] ol > li', (l) => l.length);
+  const before = await answers();
+  await page.evaluate(() => document.getElementById('ask-heading')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  await sleep(700);
+  await caption('⑦ 建物の数と形', '建物を聞くと、地図データから数えます');
+  await clickEl(await page.$('#ask-input'));
+  await page.type('#ask-input', '建物は何棟ありますか？', { delay: 130 });
+  await sleep(500);
+  await page.keyboard.press('Enter');
+  await page.waitForFunction((n) => {
+    const items = document.querySelectorAll('section[aria-labelledby="ask-heading"] ol > li');
+    const last = items[items.length - 1];
+    return (items.length > n && last && /確かめたこと/.test(last.textContent)) || document.querySelector('section[aria-labelledby="ask-heading"] [role="alert"]');
+  }, { timeout: 300000 }, before);
+  await page.waitForFunction(() => window.__map.getSource('objects') && !window.__map.isMoving() && window.__map.areTilesLoaded(), { timeout: 20000 });
+  await page.evaluate(() => document.querySelector('section[aria-labelledby="ask-heading"] ol > li:last-child')?.scrollIntoView({ block: 'end', behavior: 'smooth' }));
+  await caption('⑦ 建物の形を地図に描く', '国土地理院の地図データ（建物の形）から、棟数と輪郭を表示します');
+  await sleep(6500);
+  await caption('車・船の認識は準備中', '地理院の写真に注釈を付け、検出モデルを学習させています');
+  await sleep(3500);
   await caption('');
   await sleep(600);
   await recorder.stop();
