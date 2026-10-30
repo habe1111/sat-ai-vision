@@ -9,8 +9,8 @@
     "ship": false,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:17:44.979Z",
+  "updatedAt": "2026-10-30T13:45:35.203Z",
   "objects": [
-    {"id":"auto-50002a-ship-0","kind":"ship","status":"proposed","source":"auto","cx":16.1,"cy":428.2,"length":41.7,"width":21.6,"angle":-0.46}
+    {"id":"claude-mvv0yqxr-0","status":"proposed","source":"claude","kind":"ship","cx":18.75,"cy":428,"length":38.81,"width":13,"angle":-0.26}
   ]
 }

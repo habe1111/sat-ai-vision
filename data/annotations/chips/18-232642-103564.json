@@ -9,9 +9,6 @@
     "ship": false,
     "car": false
   },
-  "updatedAt": "2026-10-30T13:17:44.530Z",
-  "objects": [
-    {"id":"auto-bb664e-ship-0","kind":"ship","status":"proposed","source":"auto","cx":479.8,"cy":66.5,"length":55.2,"width":33.3,"angle":0.14},
-    {"id":"auto-bb664e-ship-1","kind":"ship","status":"proposed","source":"auto","cx":4,"cy":38,"length":18,"width":4.2,"angle":-1.54}
-  ]
+  "updatedAt": "2026-10-30T13:44:47.110Z",
+  "objects": []
 }
