@@ -33,7 +33,7 @@ export class SelectionError extends Error {}
 const FETCH_TIMEOUT_MS = 15_000;
 
 /** 一時ファイルに書いてから置き換える。途中で止まっても、書きかけのタイルを読まないため */
-async function writeAtomic(file: string, data: Buffer | string) {
+export async function writeAtomic(file: string, data: Buffer | string) {
   await fs.mkdir(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.${randomUUID()}.tmp`;
   try {

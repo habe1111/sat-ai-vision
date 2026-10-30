@@ -5,15 +5,19 @@
  * - 土地被覆の重ね絵から、写真を 3×3 に分けた区画ごとの構成を数える（「どこに多いか」に答えるため）
  * - 質問に位置を指す語（左上・北東など）があれば、その区画（2 つまで）を切り出して拡大した写真も渡す
  *
- * AI には、答えの文と、画面で色を付けて示す区分・区画を構造化出力で返させる。
+ * - 建物の数や位置を聞かれたら、国土地理院の地図データから建物を取り出し、棟数（区画ごと）を数える
+ *
+ * AI には、答えの文と、画面で色を付けて示す区分・区画を構造化出力で返させる。建物の形と数は地図データの
+ * ものをそのまま画面に出し、AI にはその数を言葉にさせる。
  * 数値は CV を正とし、AI には言語化を任せる（解析と同じ方針）。
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
-import { bboxCenter, formatDms, formatLength } from '@/lib/geo';
-import { REGION_KEYS, REGION_LABEL, type RegionKey, isRegionKey, regionCell, regionsInText } from '@/lib/regions';
-import type { AiReport, AskEvent, AskTurn, LandCover, LandCoverClass } from '@/lib/types';
+import { type BBox, bboxCenter, formatDms, formatLength } from '@/lib/geo';
+import { REGION_KEYS, REGION_LABEL, type RegionKey, isRegionKey, regionAt, regionCell, regionsInText } from '@/lib/regions';
+import type { AiReport, AskEvent, AskTurn, LandCover, LandCoverClass, MapObjects } from '@/lib/types';
+import { type Building, buildingObjects, buildingsIn } from '@/lib/server/buildings';
 import { ANALYSIS_DIR, readSaved } from '@/lib/server/analysis';
 import { fitForModel, planAi, runAiJson } from '@/lib/server/ai';
 
@@ -38,6 +42,8 @@ export const ASK_SYSTEM_PROMPT = `あなたは空中写真判読の専門家で�
 - answer は 2〜5 文で、です・ます調。key（building・se などの英字）は answer に書かず、日本語の名前で書く。
 - classes には、答えの説明に使う土地被覆の区分の key を入れる（画面ではその色だけを写真と地図に残して示す）。関係が無ければ空にする。
 - region には、答えの中心になる区画の key を入れる。範囲全体の話や、特定できないときは none。
+- 建物の数（棟数）を与えたときは、その数をそのまま使い、独自に数えない。地図データの時点と写真の撮影時期が違うことに触れてよい。
+- 車・船の台数は、この写真の解像度（約 0.5 m/px）では 1 台ずつ数えられない。数を聞かれたら、数えられないことと理由を伝え、舗装地や水域の割合・位置で答える。
 - 写真や解析と関係の無い質問には、答えられないと短く伝える。`;
 
 function askSchema(classKeys: string[]) {
@@ -158,6 +164,30 @@ function classesInText(text: string, classes: LandCoverClass[]): Set<string> {
   return out;
 }
 
+/**
+ * 建物の数や位置を聞いているか。建物の語に加えて、数・場所を問う語があるときだけにする。
+ * 「住宅地以外で緑が多いのは」「建物と道路の割合は」のような土地被覆の質問は、建物の形を出さずに答える
+ */
+const BUILDING_WORDS = /建物|ビル|家屋|住宅|民家|戸建|一軒家|マンション|団地|工場|倉庫|建築物/;
+const COUNT_OR_PLACE = /何棟|棟数|何軒|いくつ|数|どこ|どの|位置|場所|分布|示して|見せて|表示/;
+const NOT_OBJECTS = /以外|割合|比率|面積|[%％]/;
+export function asksForBuildings(q: string): boolean {
+  if (/何棟|棟数/.test(q)) return true;
+  return BUILDING_WORDS.test(q) && COUNT_OR_PLACE.test(q) && !NOT_OBJECTS.test(q);
+}
+
+/** 区画ごとの棟数（多い順）。プロンプトに渡す */
+function buildingRegionLines(buildings: Building[], bbox: BBox): string[] {
+  const counts = new Map<RegionKey, number>();
+  for (const b of buildings) {
+    const k = regionAt(bbox, b.center[0], b.center[1]);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return REGION_KEYS.map((k) => ({ k, n: counts.get(k) ?? 0 }))
+    .sort((a, b) => b.n - a.n)
+    .map(({ k, n }) => `- ${k} ${REGION_LABEL[k]}：${n} 棟`);
+}
+
 /** 区画を周りを少し含めて切り出し、細部が読める大きさに広げる */
 async function cropRegion(photo: Buffer, key: RegionKey): Promise<Buffer> {
   const { width: W = 0, height: H = 0 } = await sharp(photo).metadata();
@@ -237,7 +267,33 @@ export async function answerQuestion(
   }
   signal.throwIfAborted();
 
-  // 3. AI に答えさせる
+  // 3. 建物を聞かれていれば、地図データから取り出して数える（取れなくても答えは続ける）
+  let found: { buildings: Building[]; dataTime: string | null } | null = null;
+  let buildingLines: string[] = [];
+  if (asksForBuildings(question)) {
+    emit({ type: 'step', message: '地図データから建物を取り出す' });
+    try {
+      found = await buildingsIn(meta.bbox, signal);
+      const { buildings, dataTime } = found;
+      const all = buildingObjects(buildings, dataTime, '範囲全体');
+      const kinds = (o: MapObjects) => o.breakdown.map((t) => `${t.label} ${t.count}`).join('・');
+      const inAsked = buildings.filter((b) => asked.includes(regionAt(meta.bbox, b.center[0], b.center[1])));
+      buildingLines = [
+        `建物の数（${all.source}。写真の撮影時期とは違う）:`,
+        `- 範囲全体：${all.count} 棟（${kinds(all) || 'なし'}）`,
+        ...(asked.length ? [`- 質問の区画（${asked.map((k) => REGION_LABEL[k]).join('・')}）：${inAsked.length} 棟`] : []),
+        `区画ごとの棟数（多い順。「建物がどこに多いか」はこの棟数で答える）:`,
+        ...buildingRegionLines(buildings, meta.bbox),
+      ];
+    } catch (e) {
+      if (signal.aborted) throw e;
+      console.error('[ask] 建物を取り出せませんでした', e);
+      checks.push('地図データの建物を取り出せなかったため、写真と土地被覆だけで答えました');
+    }
+  }
+  signal.throwIfAborted();
+
+  // 4. AI に答えさせる
   emit({ type: 'step', message: `AI が答えを作成（${plan.label}）` });
   const [lon, lat] = bboxCenter(meta.bbox);
   const user = [
@@ -258,7 +314,11 @@ export async function answerQuestion(
     asked.length
       ? `1 枚目は範囲全体。${asked.map((k, i) => `${i + 2} 枚目は「${REGION_LABEL[k]}」`).join('、')}の区画（周りを少し含む）を拡大した写真です。`
       : `写真は範囲全体です。`,
-    ...(focusRanking.length ? [``, `この質問に関係する集計（多い順。「どこに多いか」はこの順位で答える）:`, ...focusRanking] : []),
+    // 建物の棟数を渡すときは、建物の「どこに多いか」を土地被覆の割合ではなく棟数で答えさせる
+    ...((f) => (f.length ? [``, `この質問に関係する集計（多い順。「どこに多いか」はこの順位で答える）:`, ...f] : []))(
+      buildingLines.length ? focusRanking.filter((l) => !l.startsWith('- building ')) : focusRanking,
+    ),
+    ...(buildingLines.length ? [``, ...buildingLines] : []),
     ``,
     `質問：${question}`,
   ].join('\n');
@@ -268,14 +328,26 @@ export async function answerQuestion(
   const text = typeof o?.answer === 'string' ? o.answer.trim() : '';
   if (!text) throw new Error('AI の答えを読み取れませんでした。');
   const known = new Set(landCover.classes.map((c) => c.key));
-  const classes = Array.isArray(o?.classes)
-    ? [...new Set(o.classes.filter((k): k is string => typeof k === 'string' && known.has(k)))]
-    : [];
   // AI が「none」（範囲全体の話）と判断したときはそれに従う。値が無い・壊れているときだけ、質問で指した区画を使う
   const region = o?.region === 'none' ? null : isRegionKey(o?.region) ? o.region : (asked[0] ?? null);
+  // 建物は、示す区画（質問で指した区画、無ければ AI が挙げた区画）の分だけを描いて数える。数と枠の範囲をそろえるため
+  let objects: MapObjects | null = null;
+  if (found) {
+    const scopeKeys = asked.length ? asked : region ? [region] : [];
+    const shown = scopeKeys.length
+      ? found.buildings.filter((b) => scopeKeys.includes(regionAt(meta.bbox, b.center[0], b.center[1])))
+      : found.buildings;
+    const scope = scopeKeys.length ? `${scopeKeys.map((k) => REGION_LABEL[k]).join('と')}の区画` : '範囲全体';
+    objects = buildingObjects(shown, found.dataTime, scope);
+    checks.push(`国土地理院の地図データから建物を数えました（${scope}で ${objects.count.toLocaleString('ja-JP')} 棟）`);
+  }
+  // 建物の形を描くときは、土地被覆の色は重ねない（形と色が重なって読みにくくなるため）
+  const classes = Array.isArray(o?.classes) && !objects
+    ? [...new Set(o.classes.filter((k): k is string => typeof k === 'string' && known.has(k)))]
+    : [];
   emit({
     type: 'answer',
-    answer: { text, classes, region, checks, engine: plan.label, seconds: (performance.now() - t0) / 1000 },
+    answer: { text, classes, region, objects, checks, engine: plan.label, seconds: (performance.now() - t0) / 1000 },
   });
 }
 

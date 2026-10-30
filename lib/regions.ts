@@ -38,6 +38,14 @@ export function regionBBox(bbox: BBox, key: RegionKey): BBox {
   return [w + dx * col, n - dy * (row + 1), w + dx * (col + 1), n - dy * row];
 }
 
+/** 経緯度の点が入る区画（regionBBox と同じく、緯度も線形に割る）。範囲の外なら端の区画にまとめる */
+export function regionAt(bbox: BBox, lon: number, lat: number): RegionKey {
+  const [w, s, e, n] = bbox;
+  const col = Math.min(2, Math.max(0, Math.floor(((lon - w) / (e - w)) * 3)));
+  const row = Math.min(2, Math.max(0, Math.floor(((n - lat) / (n - s)) * 3)));
+  return REGION_KEYS[row * 3 + col];
+}
+
 /**
  * 質問文から、写真の中の位置を指す語を拾う。2 文字の組（左上・北東など）を先に見る。
  * 「以上」「上空」などを拾わないよう、1 文字の向きは「側・部・端・の方・寄り」などが続くときだけにする。

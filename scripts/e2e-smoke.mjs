@@ -7,7 +7,7 @@
  *
  * 確かめること：地図が出る → 検索して結果を選ぶと URL が移動先を指す → 範囲をドラッグで選ぶ →
  * 解析の結果（写真・土地被覆、AI が使えれば所見）が出る → 土地被覆の区分を押すとその色だけになる →
- * AI に質問すると答えが出て、写真と地図に示される。各段のスクショを OUT_DIR に残す。
+ * AI に質問すると答えが出て、写真と地図に示される → 建物の数を聞くと、建物の形と棟数が出る。各段のスクショを OUT_DIR に残す。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -160,6 +160,23 @@ try {
       await page.evaluate(() => document.querySelector('aside figure')?.scrollIntoView({ block: 'start' }));
       await new Promise((r) => setTimeout(r, 300));
       await shot(page, '10-ask-photo');
+
+      // 建物の数を聞くと、地図データの建物の形を地図に描き、棟数を出す
+      await page.type('#ask-input', '建物は何棟ありますか？');
+      await page.keyboard.press('Enter');
+      await page.waitForFunction(
+        () => document.querySelectorAll('section[aria-labelledby="ask-heading"] > ol > li').length === 2
+          && /確かめたこと|role="alert"/.test(document.querySelector('section[aria-labelledby="ask-heading"] > ol > li:last-child').innerHTML),
+        { timeout: 300000 },
+      );
+      const shapes = await page.evaluate(async () => (await window.__map.getSource('objects')?.getData())?.features?.length ?? 0);
+      const chip = await page.$eval('section[aria-labelledby="ask-heading"] > ol > li:last-child', (li) => li.textContent.match(/建物 [\d,]+ 棟/)?.[0] ?? '');
+      if (shapes > 0 && chip) ok(`建物の形を地図に描き、棟数を出した（${chip}、${shapes} 件）`);
+      else fail(`建物の形か棟数が出ない（形 ${shapes} 件、表示「${chip}」）`);
+      await page.evaluate(() => document.querySelector('aside figure')?.scrollIntoView({ block: 'start' }));
+      await page.waitForFunction(() => !window.__map.isMoving() && window.__map.areTilesLoaded(), { timeout: 15000 });
+      await new Promise((r) => setTimeout(r, 500));
+      await shot(page, '11-buildings');
     }
   }
   if (errors.length) fail(`ブラウザのエラー:\n  ${errors.join('\n  ')}`);

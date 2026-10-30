@@ -63,6 +63,23 @@ export type AnalysisMeta = {
   credit: string;
 };
 
+/** 地図に形と数を出すもの（いまは建物）。数は地図データや検出の結果を正とし、AI はそれを言葉にする */
+export type MapObjects = {
+  kind: 'building';
+  label: string;          // 「建物」
+  unit: string;           // 「棟」
+  count: number;
+  /** 数えた範囲（「範囲全体」「右下（南東）の区画」など）。数が何を指すかを画面に書くため */
+  scope: string;
+  /** 種別ごとの数（多い順） */
+  breakdown: { label: string; count: number }[];
+  /** 出典（画面に出す） */
+  source: string;
+  /** 数を読むときの注意 */
+  note: string;
+  geojson: GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
+};
+
 /** 追加の質問への答え */
 export type AskAnswer = {
   text: string;
@@ -70,14 +87,16 @@ export type AskAnswer = {
   classes: string[];
   /** 説明の中心になる区画。特定できないときは null */
   region: RegionKey | null;
+  /** 位置と数を地図に出すもの（建物の質問など）。無ければ null */
+  objects: MapObjects | null;
   /** 答える前に行った追加の解析（画面に「確かめたこと」として出す） */
   checks: string[];
   engine: string;
   seconds: number;
 };
 
-/** 写真と地図に示しているもの：色を残す土地被覆の区分（空なら全部）と、枠で囲む区画 */
-export type Highlight = { classes: string[]; region: RegionKey | null };
+/** 写真と地図に示しているもの：色を残す土地被覆の区分（空なら全部）・枠で囲む区画・形を描くもの */
+export type Highlight = { classes: string[]; region: RegionKey | null; objects: MapObjects | null };
 
 /** 前の質問と答え。続けて質問するときに文脈として渡す */
 export type AskTurn = { question: string; answer: string };

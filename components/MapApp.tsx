@@ -73,11 +73,13 @@ const LOCALE = {
 
 type Mode = 'idle' | 'selecting' | 'selected' | 'report';
 
-const NO_HIGHLIGHT: Highlight = { classes: [], region: null };
+const NO_HIGHLIGHT: Highlight = { classes: [], region: null, objects: null };
 const NO_CLASSES: LandCoverClass[] = [];
 const EMPTY = { type: 'FeatureCollection' as const, features: [] };
 /** 地図の上の線の色。MapLibre は CSS 変数を読めないので、globals.css の --survey と同じ値を書く */
 const SURVEY = '#d01c80';
+/** 建物などの形の色。区画の枠（マゼンタ）や土地被覆の色と見分けられ、写真の上でも目立つ黄色 */
+const OBJECT_COLOR = '#ffd400';
 
 /** 横向きのスマホ。結果は下からのシートでなく右に出す（globals.css の land と同じ条件） */
 const LANDSCAPE_PHONE = '(orientation: landscape) and (max-height: 540px) and (max-width: 1023.98px)';
@@ -138,6 +140,8 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
   const [overlayOn, setOverlayOn] = useState(true);
   // 写真と地図に示している区分・区画（区分の一覧を押したとき・AI が答えたときに変わる）
   const [highlight, setHighlight] = useState<Highlight>(NO_HIGHLIGHT);
+  // 建物の形を描くために土地被覆を自動で消したか。形を消すときに元へ戻すため
+  const hidOverlayRef = useRef(false);
   const { state: analysis, start, reset } = useAnalysis();
 
   // ---- 地図の用意 ---------------------------------------------------------------
@@ -236,6 +240,7 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
   const beginSelect = useCallback(() => {
     reset();
     setHighlight(NO_HIGHLIGHT);
+    hidOverlayRef.current = false;
     setBbox(null);
     setSearchOpen(false);
     setMode('selecting');
@@ -244,6 +249,7 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
   const cancelSelect = useCallback(() => {
     reset();
     setHighlight(NO_HIGHLIGHT);
+    hidOverlayRef.current = false;
     setBbox(null);
     setMode('idle');
   }, [reset]);
@@ -257,6 +263,7 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
     setMode('report');
     setOverlayOn(true);
     setHighlight(NO_HIGHLIGHT);
+    hidOverlayRef.current = false;
     void start(bbox);
     // 結果のパネル（PC と横向きのスマホは右、縦向きのスマホは下のシート）に隠れない位置へ、
     // 選んだ範囲を寄せる。余白には、枠の外に付く座標・寸法のラベルと、検索タブ・地図の操作ボタンの分も含める
@@ -293,7 +300,7 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
     // 区画の枠より下に置く
     map.addLayer(
       { id: 'landcover', type: 'raster', source: 'landcover', paint: { 'raster-opacity': 0.55, 'raster-fade-duration': 0 } },
-      map.getLayer('focus-mask') ? 'focus-mask' : undefined,
+      map.getLayer('objects-fill') ? 'objects-fill' : undefined,
     );
     return () => {
       if (map.getLayer('landcover')) map.removeLayer('landcover');
@@ -323,6 +330,10 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
       return;
     }
     map.addSource('focus', { type: 'geojson', data });
+    // 建物などの形（AI の答えで示すもの）。土地被覆の上、暗くする部分の下に置く（写真の側と同じ重なり）
+    map.addSource('objects', { type: 'geojson', data: EMPTY });
+    map.addLayer({ id: 'objects-fill', type: 'fill', source: 'objects', paint: { 'fill-color': OBJECT_COLOR, 'fill-opacity': 0.3 } });
+    map.addLayer({ id: 'objects-line', type: 'line', source: 'objects', paint: { 'line-color': OBJECT_COLOR, 'line-width': 1.25 } });
     map.addLayer({
       id: 'focus-mask', type: 'fill', source: 'focus', filter: ['==', ['get', 'part'], 'mask'],
       paint: { 'fill-color': '#0d1418', 'fill-opacity': 0.45 },
@@ -333,17 +344,41 @@ export default function MapApp({ initialQuery }: { initialQuery: string }) {
     map.addLayer({ id: 'focus-line', type: 'line', source: 'focus', filter: outline, paint: { 'line-color': SURVEY, 'line-width': 2.5 } });
   }, [map, highlight.region, analysis.bbox]);
 
+  useEffect(() => {
+    (map?.getSource('objects') as GeoJSONSource | undefined)?.setData(highlight.objects?.geojson ?? EMPTY);
+  }, [map, highlight.objects]);
+
   const onClassesChange = useCallback((classes: string[]) => {
     setHighlight((h) => ({ ...h, classes }));
     if (classes.length) setOverlayOn(true);
   }, []);
   const onShowHighlight = useCallback((h: Highlight) => {
     setHighlight(h);
-    if (h.classes.length) setOverlayOn(true);
+    if (h.classes.length) {
+      hidOverlayRef.current = false;
+      setOverlayOn(true);
+    } else if (h.objects) {
+      // 建物の形を描くときは、土地被覆の色を消して形を見やすくする（「重ねる」に印を付ければ戻せる）
+      setOverlayOn((on) => {
+        if (on) hidOverlayRef.current = true;
+        return false;
+      });
+    } else if (hidOverlayRef.current) {
+      hidOverlayRef.current = false;
+      setOverlayOn(true);
+    }
   }, []);
-  const onClearHighlight = useCallback(() => setHighlight(NO_HIGHLIGHT), []);
+  const onClearHighlight = useCallback(() => {
+    setHighlight(NO_HIGHLIGHT);
+    if (hidOverlayRef.current) {
+      hidOverlayRef.current = false;
+      setOverlayOn(true);
+    }
+  }, []);
   // 重ね絵を消したら、色の絞り込みもやめる（見えない色を「表示しています」と言わないため）
   const onOverlayChange = useCallback((on: boolean) => {
+    // 利用者が自分で切り替えたら、自動で消した記録は捨てる
+    hidOverlayRef.current = false;
     setOverlayOn(on);
     if (!on) setHighlight((h) => ({ ...h, classes: [] }));
   }, []);

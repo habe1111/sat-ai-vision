@@ -34,7 +34,8 @@ function suggestions(classes: LandCoverClass[]): string[] {
 }
 
 const sameHighlight = (a: Highlight, b: Highlight) =>
-  a.region === b.region && a.classes.length === b.classes.length && a.classes.every((k) => b.classes.includes(k));
+  a.region === b.region && a.objects === b.objects
+  && a.classes.length === b.classes.length && a.classes.every((k) => b.classes.includes(k));
 
 function AnswerBody({ answer, classes, highlight, onShow }: {
   answer: AskAnswer;
@@ -42,8 +43,8 @@ function AnswerBody({ answer, classes, highlight, onShow }: {
   highlight: Highlight;
   onShow: (h: Highlight) => void;
 }) {
-  const own: Highlight = { classes: answer.classes, region: answer.region };
-  const showable = own.classes.length > 0 || own.region !== null;
+  const own: Highlight = { classes: answer.classes, region: answer.region, objects: answer.objects };
+  const showable = own.classes.length > 0 || own.region !== null || own.objects !== null;
   const shown = showable && sameHighlight(own, highlight);
   const byKey = new Map(classes.map((c) => [c.key, c]));
   return (
@@ -60,6 +61,12 @@ function AnswerBody({ answer, classes, highlight, onShow }: {
               </span>
             ) : null;
           })}
+          {own.objects && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#b38f00]/60 bg-white px-2 py-0.5 text-xs">
+              <span aria-hidden className="size-2.5 rounded-[2px] border-[1.5px] border-[#b38f00] bg-[#ffd400]/50" />
+              <span className="num">{own.objects.label} {own.objects.count.toLocaleString('ja-JP')} {own.objects.unit}（{own.objects.scope}）</span>
+            </span>
+          )}
           {own.region && (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-survey/50 bg-white px-2 py-0.5 text-xs text-survey-ink">
               <span aria-hidden className="size-2.5 rounded-[2px] border-[1.5px] border-survey" />
@@ -78,6 +85,12 @@ function AnswerBody({ answer, classes, highlight, onShow }: {
           </button>
         </div>
       )}
+      {answer.objects && (
+        <p className="mt-2 text-xs leading-relaxed text-ink-2">
+          {answer.objects.breakdown.map((t) => `${t.label} ${t.count}`).join('・')}。{answer.objects.note}
+          <span className="block">出典：{answer.objects.source}</span>
+        </p>
+      )}
       {answer.checks.length > 0 && (
         <ul className="mt-2.5 space-y-0.5 text-xs leading-relaxed text-ink-2">
           {answer.checks.map((c) => <li key={c}>確かめたこと：{c}</li>)}
@@ -91,7 +104,7 @@ function AnswerBody({ answer, classes, highlight, onShow }: {
 export function AskSection({ analysisId, classes, highlight, onShow }: Props) {
   // 示すものがある答えのときだけ写真と地図を替える（無関係な質問で、利用者の絞り込みを消さない）
   const { items, busy, ask } = useAsk(analysisId, (a) => {
-    if (a.classes.length || a.region) onShow({ classes: a.classes, region: a.region });
+    if (a.classes.length || a.region || a.objects) onShow({ classes: a.classes, region: a.region, objects: a.objects });
   });
   const [text, setText] = useState('');
   const listRef = useRef<HTMLOListElement>(null);

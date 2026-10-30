@@ -3,11 +3,12 @@
  * 解析結果のパネル（判読調書）。PC では右側、スマホでは下から出す。
  * 結果は届いた順に埋まっていく（写真 → 土地被覆 → AI の所見）。終わった後は AI に追加で質問できる。
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { AnalysisState, StageKey } from '@/lib/client/useAnalysis';
 import { bboxCenter, bboxSizeMeters, formatArea, formatDms, formatLength } from '@/lib/geo';
 import { REGION_LABEL, regionCell } from '@/lib/regions';
-import type { Highlight, LandCoverClass } from '@/lib/types';
+import type { BBox } from '@/lib/geo';
+import type { Highlight, LandCoverClass, MapObjects } from '@/lib/types';
 import { AskSection } from '@/components/AskSection';
 import { LandCoverSection } from '@/components/LandCoverSection';
 import { STAGE_ORDER, StageTimeline } from '@/components/StageTimeline';
@@ -58,8 +59,33 @@ function describeHighlight(h: Highlight, classes: LandCoverClass[]): string {
   const names = h.classes.map((k) => classes.find((c) => c.key === k)?.label).filter(Boolean);
   const parts = [];
   if (names.length) parts.push(`${names.join('・')}の色だけ`);
+  if (h.objects) parts.push(`${h.objects.scope}の${h.objects.label} ${h.objects.count.toLocaleString('ja-JP')} ${h.objects.unit}（地図データ）`);
   if (h.region) parts.push(`${REGION_LABEL[h.region]}の区画`);
   return `${parts.join('と')}を表示しています。`;
+}
+
+/**
+ * 写真の上に建物などの形を描く。写真は Web メルカトルなので、緯度はメルカトルの縦位置に直す。
+ * 数千棟でも軽いよう 1 本の path にまとめ、形が変わったときだけ作り直す
+ */
+function ObjectShapes({ objects, bbox }: { objects: MapObjects; bbox: BBox }) {
+  const d = useMemo(() => {
+    const [w, s, e, n] = bbox;
+    const my = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+    const x = (lon: number) => (((lon - w) / (e - w)) * 1000).toFixed(1);
+    const y = (lat: number) => (((my(n) - my(lat)) / (my(n) - my(s))) * 1000).toFixed(1);
+    const parts: string[] = [];
+    for (const f of objects.geojson.features) {
+      const polygons = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+      for (const rings of polygons) for (const ring of rings) parts.push(`M${ring.map(([lon, lat]) => `${x(lon)},${y(lat)}`).join('L')}Z`);
+    }
+    return parts.join('');
+  }, [objects, bbox]);
+  return (
+    <svg aria-hidden viewBox="0 0 1000 1000" preserveAspectRatio="none" className="absolute inset-0 size-full">
+      <path d={d} fill="#ffd400" fillOpacity={0.3} fillRule="evenodd" stroke="#ffd400" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
 }
 
 export function ReportPanel({
@@ -153,6 +179,7 @@ export function ReportPanel({
                   className={`absolute inset-0 size-full object-cover ${highlight.classes.length ? 'opacity-80' : 'opacity-60'}`}
                 />
               )}
+              {highlight.objects && bbox && <ObjectShapes objects={highlight.objects} bbox={bbox} />}
               {focus && (
                 <div
                   aria-hidden
@@ -161,7 +188,7 @@ export function ReportPanel({
                 />
               )}
             </div>
-            {(highlight.classes.length > 0 || highlight.region) && (
+            {(highlight.classes.length > 0 || highlight.region || highlight.objects) && (
               <p className="mt-2 text-xs leading-relaxed text-ink-2">
                 {describeHighlight(highlight, landCover?.classes ?? [])}
                 <button
