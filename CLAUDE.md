@@ -41,7 +41,8 @@ ollama serve                # AI の判読（Ollama）に必要
 - AI は `AI_PROVIDER`（auto / ollama / anthropic / none）。数値は CV を正とし、VLM には言語化を任せる。
 - 追加の質問は `POST /api/ask`（`lib/server/ask.ts`）。重ね絵から 3×3 区画の集計を足し、位置の語があれば区画を拡大して渡す。
   建物を聞かれたら国土地理院の最適化ベクトルタイル（**PMTiles 版**。{z}/{x}/{y}.pbf 版は 2023-10 で更新停止）から
-  棟数と形を出す（`lib/server/buildings.ts`）。車・船は既製のモデルでは数えられない（README の実測）ので、自前で学習する予定。
+  棟数と形を出す（`lib/server/buildings.ts`）。車は OpenStreetMap の駐車場（`lib/server/parking.ts`、Overpass は応答に 15〜30 秒）。
+  船は自前の学習（`tools/ship-train`）が中心 F1 0.58 で未採用、超解像（`tools/sr-train`）も効かなかった（README の実測）。
 - 船・車の注釈は開発用の `/dev/annotate`（API は `app/api/dev/annotate/`）。**next dev のときだけ**動き、本番は 404。
   注釈は `data/annotations/chips/` に 1 チップ 1 ファイル（Git 管理・CC BY 4.0）。画像は `.cache/annotate/` で Git に入れない。
   注釈ページは PC 用の開発ツールなので、スマホの画面は確かめていない。
