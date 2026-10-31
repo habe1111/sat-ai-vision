@@ -6,6 +6,8 @@
  * - 質問に位置を指す語（左上・北東など）があれば、その区画（2 つまで）を切り出して拡大した写真も渡す
  *
  * - 建物の数や位置を聞かれたら、国土地理院の地図データから建物を取り出し、棟数（区画ごと）を数える
+ * - 車や駐車場を聞かれたら、OpenStreetMap の駐車場を取り出し、か所数と収容台数（区画ごと）を数える
+ * - 船を聞かれたら、自前で学習した検出モデルで、z18 の写真から船を 1 隻ずつ見つけて数える
  *
  * AI には、答えの文と、画面で色を付けて示す区分・区画を構造化出力で返させる。建物の形と数は地図データの
  * ものをそのまま画面に出し、AI にはその数を言葉にさせる。
@@ -18,6 +20,8 @@ import { type BBox, bboxCenter, formatDms, formatLength } from '@/lib/geo';
 import { REGION_KEYS, REGION_LABEL, type RegionKey, isRegionKey, regionAt, regionCell, regionsInText } from '@/lib/regions';
 import type { AiReport, AskEvent, AskTurn, LandCover, LandCoverClass, MapObjects } from '@/lib/types';
 import { type Building, buildingObjects, buildingsIn } from '@/lib/server/buildings';
+import { OverpassBusyError, type ParkingLot, type SkippedLot, capacityText, parkingCapacity, parkingIn, parkingObjects } from '@/lib/server/parking';
+import { type Ship, ShipAreaError, shipModelAvailable, shipObjects, shipsIn } from '@/lib/server/ships';
 import { ANALYSIS_DIR, readSaved } from '@/lib/server/analysis';
 import { fitForModel, planAi, runAiJson } from '@/lib/server/ai';
 
@@ -43,7 +47,9 @@ export const ASK_SYSTEM_PROMPT = `あなたは空中写真判読の専門家で�
 - classes には、答えの説明に使う土地被覆の区分の key を入れる（画面ではその色だけを写真と地図に残して示す）。関係が無ければ空にする。
 - region には、答えの中心になる区画の key を入れる。範囲全体の話や、特定できないときは none。
 - 建物の数（棟数）を与えたときは、その数をそのまま使い、独自に数えない。地図データの時点と写真の撮影時期が違うことに触れてよい。
-- 車・船の台数は、この写真の解像度（約 0.5 m/px）では 1 台ずつ数えられない。数を聞かれたら、数えられないことと理由を伝え、舗装地や水域の割合・位置で答える。
+- 車は、この写真の解像度（約 0.5 m/px）では 1 台ずつ数えられない。駐車場の数と収容台数（地図データ）を与えたときは、その数をそのまま使い、「収容できる台数の目安で、写真に写っている車の数ではない」ことを必ず添える。与えていないときは、数えられないことと理由を伝え、舗装地の割合・位置で答える。
+- 船の数（検出モデル）を与えたときは、その数をそのまま使い、自動で見つけた数で数え違いがあり得ることを添える。与えていないときは、数えられないことを伝え、水域の割合・位置で答える。
+- 建物・駐車場・船の数は、与えた数だけを使う。数を与えていないものの数は、写真から推測して答えず、「今回は数えていない」と伝える。
 - 写真や解析と関係の無い質問には、答えられないと短く伝える。`;
 
 function askSchema(classKeys: string[]) {
@@ -176,16 +182,59 @@ export function asksForBuildings(q: string): boolean {
   return BUILDING_WORDS.test(q) && COUNT_OR_PLACE.test(q) && !NOT_OBJECTS.test(q);
 }
 
-/** 区画ごとの棟数（多い順）。プロンプトに渡す */
-function buildingRegionLines(buildings: Building[], bbox: BBox): string[] {
+/** 「ありますか」「いますか」も含めて、ものがあるかを問う語 */
+const EXISTS = /多い|少ない|あ[るりっ]|い[るまっ]/;
+/** 車ではない「車」（電車・自転車・観覧車・車庫など）と、自動車以外の乗り物 */
+const NOT_CARS = /電車|列車|汽車|馬車|風車|水車|滑車|自転車|観覧車|貨車|停車|下車|発車|乗車|車庫|車道|車線|車両|車窓|船|ボート|ヨット|クレーン/;
+/** 道路や交通を聞く質問は、駐車場ではなく舗装の区分で答える */
+const ROAD_WORDS = /道路|通り|交通|渋滞|交差点|高速/;
+const CAR_WORDS = /駐車|パーキング|車|クルマ|自動車/;
+
+/**
+ * 車や駐車場の数・位置を聞いているか。車ではない「車」（電車・自転車など）や、道路・交通の質問は除く。
+ * 「駐車場の割合は」のような土地被覆の質問も、駐車場の形を出さずに答える
+ */
+export function asksForParking(q: string): boolean {
+  // 「駐車」が無い質問では、車ではない「車」の語を消してから車の語を探す
+  const t = /駐車|パーキング/.test(q) ? q : q.replace(new RegExp(NOT_CARS.source, 'g'), '');
+  if (!CAR_WORDS.test(t) && !(/何台|台数/.test(q) && !NOT_CARS.test(q))) return false;
+  if (!/駐車|パーキング/.test(q) && ROAD_WORDS.test(q)) return false;
+  if (/何台|台数/.test(q)) return true;
+  return (COUNT_OR_PLACE.test(q) || EXISTS.test(q)) && !NOT_OBJECTS.test(q);
+}
+
+/** 船の数や位置を聞いているか。「風船」「造船所」は除く。船の語があれば「何台」も船の数とみなす */
+const SHIP_WORDS = /(?<![風造])船(?!所)|ボート|ヨット|漁船|フェリー|タンカー|艦|何隻|隻数/;
+export function asksForShips(q: string): boolean {
+  if (/何隻|隻数/.test(q)) return true;
+  if (!SHIP_WORDS.test(q)) return false;
+  if (/何台|台数/.test(q)) return true;
+  return (COUNT_OR_PLACE.test(q) || EXISTS.test(q)) && !NOT_OBJECTS.test(q);
+}
+
+/** 区画ごとの数（多い順）。プロンプトに渡す */
+function countByRegion(items: { center: [number, number] }[], bbox: BBox, unit: string): string[] {
   const counts = new Map<RegionKey, number>();
-  for (const b of buildings) {
-    const k = regionAt(bbox, b.center[0], b.center[1]);
+  for (const it of items) {
+    const k = regionAt(bbox, it.center[0], it.center[1]);
     counts.set(k, (counts.get(k) ?? 0) + 1);
   }
   return REGION_KEYS.map((k) => ({ k, n: counts.get(k) ?? 0 }))
     .sort((a, b) => b.n - a.n)
-    .map(({ k, n }) => `- ${k} ${REGION_LABEL[k]}：${n} 棟`);
+    .map(({ k, n }) => `- ${k} ${REGION_LABEL[k]}：${n} ${unit}`);
+}
+
+/** 区画ごとの駐車場のか所数と収容台数（台数の多い順）。プロンプトに渡す */
+function parkingRegionLines(lots: ParkingLot[], bbox: BBox): string[] {
+  const by = new Map<RegionKey, ParkingLot[]>();
+  for (const l of lots) {
+    const k = regionAt(bbox, l.center[0], l.center[1]);
+    by.set(k, [...(by.get(k) ?? []), l]);
+  }
+  return REGION_KEYS.map((k) => ({ k, list: by.get(k) ?? [] }))
+    .map(({ k, list }) => ({ k, n: list.length, cap: parkingCapacity(list), text: capacityText(list) }))
+    .sort((a, b) => b.cap.total - a.cap.total || b.n - a.n)
+    .map(({ k, n, text }) => `- ${k} ${REGION_LABEL[k]}：${n} か所${text ? `・${text}` : ''}`);
 }
 
 /** 区画を周りを少し含めて切り出し、細部が読める大きさに広げる */
@@ -269,8 +318,50 @@ export async function answerQuestion(
 
   // 3. 建物を聞かれていれば、地図データから取り出して数える（取れなくても答えは続ける）
   let found: { buildings: Building[]; dataTime: string | null } | null = null;
+  let parking: { lots: ParkingLot[]; skipped: SkippedLot[] } | null = null;
   let buildingLines: string[] = [];
-  if (asksForBuildings(question)) {
+  let parkingLines: string[] = [];
+  let ships: Ship[] | null = null;
+  let shipLines: string[] = [];
+  // 1 つの質問で地図に描くのは 1 種類だけ（棟数を名指しされていれば建物、次に船、駐車場、建物の順）
+  const named = /何棟|棟数/.test(question);
+  const wantsShips = !named && asksForShips(question);
+  const wantsParking = !named && !wantsShips && asksForParking(question);
+  const wantsBuildings = !wantsShips && !wantsParking && asksForBuildings(question);
+  // 選ばなかった種類も聞かれていたら、数えていないことを伝える（AI が根拠なく数を答えないため）
+  const dropped = [
+    !wantsShips && asksForShips(question) ? '船' : '',
+    !wantsParking && asksForParking(question) ? '駐車場' : '',
+    !wantsBuildings && asksForBuildings(question) ? '建物' : '',
+  ].filter(Boolean);
+  if (dropped.length) checks.push(`${dropped.join('・')}は数えていません（1 回の質問で地図に示すのは 1 種類です。分けて聞いてください）`);
+  if (wantsShips) {
+    if (!shipModelAvailable()) {
+      checks.push('船の検出モデル（models/ship_unet.onnx）が無いため、船は数えていません');
+    } else {
+      emit({ type: 'step', message: '検出モデルで船を探す（z18 の写真）' });
+      try {
+        ships = await shipsIn(meta.bbox, signal);
+        const all = shipObjects(ships, '範囲全体');
+        const inAsked = ships.filter((sh) => asked.includes(regionAt(meta.bbox, sh.center[0], sh.center[1])));
+        shipLines = [
+          `船の数（${all.basis}。自動で見つけた数で、数え違いがあり得る）:`,
+          `- 範囲全体：${all.count} 隻（${all.breakdown.map((t) => `${t.label} ${t.count}`).join('・') || 'なし'}）`,
+          ...(asked.length ? [`- 質問の区画（${asked.map((k) => REGION_LABEL[k]).join('・')}）：${inAsked.length} 隻`] : []),
+          `区画ごとの隻数（多い順。「船がどこに多いか」はこの隻数で答える）:`,
+          ...countByRegion(ships, meta.bbox, '隻'),
+        ];
+      } catch (e) {
+        if (signal.aborted) throw e;
+        if (e instanceof ShipAreaError) checks.push(`${e.message}。地図で範囲を狭めて解析し直してください`);
+        else {
+          console.error('[ask] 船を探せませんでした', e);
+          checks.push('船を探せなかったため、写真と土地被覆だけで答えました');
+        }
+      }
+    }
+  }
+  if (wantsBuildings) {
     emit({ type: 'step', message: '地図データから建物を取り出す' });
     try {
       found = await buildingsIn(meta.bbox, signal);
@@ -283,12 +374,33 @@ export async function answerQuestion(
         `- 範囲全体：${all.count} 棟（${kinds(all) || 'なし'}）`,
         ...(asked.length ? [`- 質問の区画（${asked.map((k) => REGION_LABEL[k]).join('・')}）：${inAsked.length} 棟`] : []),
         `区画ごとの棟数（多い順。「建物がどこに多いか」はこの棟数で答える）:`,
-        ...buildingRegionLines(buildings, meta.bbox),
+        ...countByRegion(buildings, meta.bbox, '棟'),
       ];
     } catch (e) {
       if (signal.aborted) throw e;
       console.error('[ask] 建物を取り出せませんでした', e);
       checks.push('地図データの建物を取り出せなかったため、写真と土地被覆だけで答えました');
+    }
+  }
+  if (wantsParking) {
+    emit({ type: 'step', message: '地図データ（OpenStreetMap）から駐車場を取り出す' });
+    try {
+      parking = await parkingIn(meta.bbox, signal);
+      const all = parkingObjects(parking.lots, parking.skipped.length, '範囲全体');
+      const inAsked = parking.lots.filter((l) => asked.includes(regionAt(meta.bbox, l.center[0], l.center[1])));
+      parkingLines = [
+        `駐車場（${all.source}。収容できる台数の目安で、写真に写っている車の数ではない）:`,
+        `- 範囲全体：${all.count} か所${all.summary ? `、${all.summary}` : ''}`,
+        ...(asked.length ? [`- 質問の区画（${asked.map((k) => REGION_LABEL[k]).join('・')}）：${inAsked.length} か所${inAsked.length ? `・${capacityText(inAsked)}` : ''}`] : []),
+        `区画ごとの駐車場（収容台数の多い順。「駐車場や車がどこに多いか」はこの順位で答える）:`,
+        ...parkingRegionLines(parking.lots, meta.bbox),
+      ];
+    } catch (e) {
+      if (signal.aborted) throw e;
+      console.error('[ask] 駐車場を取り出せませんでした', e);
+      checks.push(e instanceof OverpassBusyError
+        ? 'OpenStreetMap のサーバーが混み合っていて駐車場を取り出せなかったため、写真と土地被覆だけで答えました（時間をおいて聞き直してください）'
+        : '地図データの駐車場を取り出せなかったため、写真と土地被覆だけで答えました');
     }
   }
   signal.throwIfAborted();
@@ -316,9 +428,13 @@ export async function answerQuestion(
       : `写真は範囲全体です。`,
     // 建物の棟数を渡すときは、建物の「どこに多いか」を土地被覆の割合ではなく棟数で答えさせる
     ...((f) => (f.length ? [``, `この質問に関係する集計（多い順。「どこに多いか」はこの順位で答える）:`, ...f] : []))(
-      buildingLines.length ? focusRanking.filter((l) => !l.startsWith('- building ')) : focusRanking,
+      buildingLines.length ? focusRanking.filter((l) => !l.startsWith('- building '))
+        : parkingLines.length ? focusRanking.filter((l) => !l.startsWith('- paved '))
+          : shipLines.length ? focusRanking.filter((l) => !l.startsWith('- water ')) : focusRanking,
     ),
     ...(buildingLines.length ? [``, ...buildingLines] : []),
+    ...(parkingLines.length ? [``, ...parkingLines] : []),
+    ...(shipLines.length ? [``, ...shipLines] : []),
     ``,
     `質問：${question}`,
   ].join('\n');
@@ -330,18 +446,23 @@ export async function answerQuestion(
   const known = new Set(landCover.classes.map((c) => c.key));
   // AI が「none」（範囲全体の話）と判断したときはそれに従う。値が無い・壊れているときだけ、質問で指した区画を使う
   const region = o?.region === 'none' ? null : isRegionKey(o?.region) ? o.region : (asked[0] ?? null);
-  // 建物は、示す区画（質問で指した区画、無ければ AI が挙げた区画）の分だけを描いて数える。数と枠の範囲をそろえるため
+  // 示す区画（質問で指した区画、無ければ AI が挙げた区画）の分だけを描いて数える。数と枠の範囲をそろえるため
+  const scopeKeys = asked.length ? asked : region ? [region] : [];
+  const scope = scopeKeys.length ? `${scopeKeys.map((k) => REGION_LABEL[k]).join('と')}の区画` : '範囲全体';
+  const inScope = <T extends { center: [number, number] }>(items: T[]) =>
+    scopeKeys.length ? items.filter((it) => scopeKeys.includes(regionAt(meta.bbox, it.center[0], it.center[1]))) : items;
   let objects: MapObjects | null = null;
   if (found) {
-    const scopeKeys = asked.length ? asked : region ? [region] : [];
-    const shown = scopeKeys.length
-      ? found.buildings.filter((b) => scopeKeys.includes(regionAt(meta.bbox, b.center[0], b.center[1])))
-      : found.buildings;
-    const scope = scopeKeys.length ? `${scopeKeys.map((k) => REGION_LABEL[k]).join('と')}の区画` : '範囲全体';
-    objects = buildingObjects(shown, found.dataTime, scope);
+    objects = buildingObjects(inScope(found.buildings), found.dataTime, scope);
     checks.push(`国土地理院の地図データから建物を数えました（${scope}で ${objects.count.toLocaleString('ja-JP')} 棟）`);
+  } else if (parking) {
+    objects = parkingObjects(inScope(parking.lots), inScope(parking.skipped).length, scope);
+    checks.push(`OpenStreetMap から駐車場を数えました（${scope}で ${objects.count.toLocaleString('ja-JP')} か所）`);
+  } else if (ships) {
+    objects = shipObjects(inScope(ships), scope);
+    checks.push(`検出モデルで z18 の写真から船を探しました（${scope}で ${objects.count.toLocaleString('ja-JP')} 隻）`);
   }
-  // 建物の形を描くときは、土地被覆の色は重ねない（形と色が重なって読みにくくなるため）
+  // 建物・駐車場・船の形を描くときは、土地被覆の色は重ねない（形と色が重なって読みにくくなるため）
   const classes = Array.isArray(o?.classes) && !objects
     ? [...new Set(o.classes.filter((k): k is string => typeof k === 'string' && known.has(k)))]
     : [];

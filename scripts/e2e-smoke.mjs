@@ -7,7 +7,8 @@
  *
  * 確かめること：地図が出る → 検索して結果を選ぶと URL が移動先を指す → 範囲をドラッグで選ぶ →
  * 解析の結果（写真・土地被覆、AI が使えれば所見）が出る → 土地被覆の区分を押すとその色だけになる →
- * AI に質問すると答えが出て、写真と地図に示される → 建物の数を聞くと、建物の形と棟数が出る。各段のスクショを OUT_DIR に残す。
+ * AI に質問すると答えが出て、写真と地図に示される → 建物の数を聞くと、建物の形と棟数が出る →
+ * 駐車場を聞くと、OpenStreetMap の駐車場の形とか所数が出る。各段のスクショを OUT_DIR に残す。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -177,6 +178,26 @@ try {
       await page.waitForFunction(() => !window.__map.isMoving() && window.__map.areTilesLoaded(), { timeout: 15000 });
       await new Promise((r) => setTimeout(r, 500));
       await shot(page, '11-buildings');
+
+      // 駐車場を聞くと、OpenStreetMap の駐車場の形と、か所数・収容台数を出す。
+      // 公開の Overpass サーバーが混み合って取れないときは、そのことを「確かめたこと」に書けば通す
+      await page.type('#ask-input', '駐車場はどこにありますか？');
+      await page.keyboard.press('Enter');
+      await page.waitForFunction(
+        () => document.querySelectorAll('section[aria-labelledby="ask-heading"] > ol > li').length === 3
+          && /確かめたこと|role="alert"/.test(document.querySelector('section[aria-labelledby="ask-heading"] > ol > li:last-child').innerHTML),
+        { timeout: 300000 },
+      );
+      const lastText = await page.$eval('section[aria-labelledby="ask-heading"] > ol > li:last-child', (li) => li.textContent);
+      const lots = lastText.match(/駐車場 [\d,]+ か所/)?.[0];
+      const parkShapes = await page.evaluate(async () => (await window.__map.getSource('objects')?.getData())?.features?.length ?? 0);
+      if (lots && /OpenStreetMap/.test(lastText) && (parkShapes > 0 || lots === '駐車場 0 か所')) ok(`駐車場の形と数を出した（${lots}、${parkShapes} 件）`);
+      else if (/駐車場を取り出せなかった/.test(lastText)) ok('駐車場は OpenStreetMap のサーバーが混み合って取れなかったが、そのことを伝えた');
+      else fail(`駐車場の形か数が出ない（表示「${lots ?? ''}」、形 ${parkShapes} 件）`);
+      await page.evaluate(() => document.querySelector('aside figure')?.scrollIntoView({ block: 'start' }));
+      await page.waitForFunction(() => !window.__map.isMoving() && window.__map.areTilesLoaded(), { timeout: 15000 });
+      await new Promise((r) => setTimeout(r, 500));
+      await shot(page, '12-parking');
     }
   }
   if (errors.length) fail(`ブラウザのエラー:\n  ${errors.join('\n  ')}`);

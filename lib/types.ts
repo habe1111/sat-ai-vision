@@ -63,12 +63,16 @@ export type AnalysisMeta = {
   credit: string;
 };
 
-/** 地図に形と数を出すもの（いまは建物）。数は地図データや検出の結果を正とし、AI はそれを言葉にする */
+/** 地図に形と数を出すもの（建物・駐車場・船）。数は地図データや検出の結果を正とし、AI はそれを言葉にする */
 export type MapObjects = {
-  kind: 'building';
+  kind: 'building' | 'parking' | 'ship';
   label: string;          // 「建物」
   unit: string;           // 「棟」
   count: number;
+  /** 数の拠り所（「地図データ」「検出モデル」）。画面で、数が何に基づくかを示す */
+  basis: string;
+  /** 数に添える一言（駐車場の「収容 約 1,200 台分」など）。無ければ空 */
+  summary: string;
   /** 数えた範囲（「範囲全体」「右下（南東）の区画」など）。数が何を指すかを画面に書くため */
   scope: string;
   /** 種別ごとの数（多い順） */

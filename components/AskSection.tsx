@@ -87,7 +87,9 @@ function AnswerBody({ answer, classes, highlight, onShow }: {
       )}
       {answer.objects && (
         <p className="mt-2 text-xs leading-relaxed text-ink-2">
-          {answer.objects.breakdown.map((t) => `${t.label} ${t.count}`).join('・')}。{answer.objects.note}
+          {answer.objects.summary && <span className="num block font-bold text-ink">{answer.objects.summary}</span>}
+          {answer.objects.breakdown.length > 0 && `${answer.objects.breakdown.map((t) => `${t.label} ${t.count}`).join('・')}。`}
+          {answer.objects.note}
           <span className="block">出典：{answer.objects.source}</span>
         </p>
       )}

@@ -59,7 +59,7 @@ function describeHighlight(h: Highlight, classes: LandCoverClass[]): string {
   const names = h.classes.map((k) => classes.find((c) => c.key === k)?.label).filter(Boolean);
   const parts = [];
   if (names.length) parts.push(`${names.join('・')}の色だけ`);
-  if (h.objects) parts.push(`${h.objects.scope}の${h.objects.label} ${h.objects.count.toLocaleString('ja-JP')} ${h.objects.unit}（地図データ）`);
+  if (h.objects) parts.push(`${h.objects.scope}の${h.objects.label} ${h.objects.count.toLocaleString('ja-JP')} ${h.objects.unit}（${h.objects.basis}）`);
   if (h.region) parts.push(`${REGION_LABEL[h.region]}の区画`);
   return `${parts.join('と')}を表示しています。`;
 }
