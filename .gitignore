@@ -45,3 +45,6 @@ e2e-out/
 models/*.onnx
 tools/flair-export/.venv/
 CLAUDE.local.md
+
+# Python のキャッシュ（tools/ の学習の道具）
+__pycache__/
