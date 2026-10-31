@@ -1,0 +1,128 @@
+[
+ {
+  "name": "焼津漁港",
+  "kind": "ship",
+  "zone": 8,
+  "lon": 138.3261,
+  "lat": 34.87,
+  "mesh": "08OD1670",
+  "url": "https://virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2021/LP/Ortho/08/OD/16/08OD1670.zip"
+ },
+ {
+  "name": "清水港",
+  "kind": "ship",
+  "zone": 8,
+  "lon": 138.495,
+  "lat": 35.017,
+  "mesh": "08ND6938",
+  "url": "https://virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2021/LP/Ortho/08/ND/69/08ND6938.zip"
+ },
+ {
+  "name": "沼津港",
+  "kind": "ship",
+  "zone": 8,
+  "lon": 138.857,
+  "lat": 35.083,
+  "mesh": "08NE3881",
+  "url": "https://virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2019/LP/Ortho/08/NE/38/08NE3881.zip"
+ },
+ {
+  "name": "用宗漁港",
+  "kind": "ship",
+  "zone": 8,
+  "lon": 138.367,
+  "lat": 34.937,
+  "mesh": "08ND9639",
+  "url": "https://virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2021/LP/Ortho/08/ND/96/08ND9639.zip"
+ },
+ {
+  "name": "由比漁港",
+  "kind": "ship",
+  "zone": 8,
+  "lon": 138.567,
+  "lat": 35.105,
+  "mesh": "08NE3105",
+  "url": "https://virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2021/LP/Ortho/08/NE/31/08NE3105.zip"
+ },
+ {
+  "name": "伊東港",
+  "kind": "ship",
+  "zone": 8,
+  "lon": 139.103,
+  "lat": 34.968,
+  "mesh": "08NF8317",
+  "url": "https://virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2019/LP/Ortho/08/NF/83/08NF8317.zip"
+ },
+ {
+  "name": "下田港",
+  "kind": "ship",
+  "zone": 8,
+  "lon": 138.946,
+  "lat": 34.676,
+  "mesh": "08OF8092",
+  "url": "https://virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2019/LP/Ortho/08/OF/80/08OF8092.zip"
+ },
+ {
+  "name": "御前崎港",
+  "kind": "ship",
+  "zone": 8,
+  "lon": 138.215,
+  "lat": 34.597,
+  "mesh": "08PD1384",
+  "url": "https://virtual-shizuoka.s3.ap-northeast-1.amazonaws.com/2021/LP/Ortho/08/PD/13/08PD1384.zip"
+ },
+ {
+  "name": "ららぽーと立川立飛",
+  "kind": "car",
+  "zone": 9,
+  "lon": 139.4167,
+  "lat": 35.7088,
+  "mesh": "09LD0075",
+  "url": "https://gic-tokyo.s3.ap-northeast-1.amazonaws.com/2023/dig/ortho/09LD0075.zip"
+ },
+ {
+  "name": "IKEA立川",
+  "kind": "car",
+  "zone": 9,
+  "lon": 139.4108,
+  "lat": 35.708,
+  "mesh": "09LD0074",
+  "url": "https://gic-tokyo.s3.ap-northeast-1.amazonaws.com/2023/dig/ortho/09LD0074.zip"
+ },
+ {
+  "name": "多摩センター",
+  "kind": "car",
+  "zone": 9,
+  "lon": 139.424,
+  "lat": 35.624,
+  "mesh": "09LD3087",
+  "url": "https://gic-tokyo.s3.ap-northeast-1.amazonaws.com/2023/dig/ortho/09LD3087.zip"
+ },
+ {
+  "name": "東京競馬場",
+  "kind": "car",
+  "zone": 9,
+  "lon": 139.485,
+  "lat": 35.663,
+  "mesh": "09LD2241",
+  "url": "https://gic-tokyo.s3.ap-northeast-1.amazonaws.com/2023/dig/ortho/09LD2241.zip"
+ },
+ {
+  "name": "昭島",
+  "kind": "car",
+  "zone": 9,
+  "lon": 139.3647,
+  "lat": 35.7083,
+  "mesh": "09LC0973",
+  "url": "https://gic-tokyo.s3.ap-northeast-1.amazonaws.com/2023/dig/ortho/09LC0973.zip"
+ },
+ {
+  "name": "八王子駅",
+  "kind": "car",
+  "zone": 9,
+  "lon": 139.339,
+  "lat": 35.656,
+  "mesh": "09LC2868",
+  "url": "https://gic-tokyo.s3.ap-northeast-1.amazonaws.com/2023/dig/ortho/09LC2868.zip"
+ }
+]
